@@ -41,6 +41,7 @@ def _raise_missing_tcpdump(*args, **kwargs):
 
 def test_missing_tcpdump_does_not_discard_zeek_handles(tmp_path, monkeypatch):
     monkeypatch.setattr(extmod, "PCAP_ENGINE", "zeek")
+    monkeypatch.setattr(extmod.zeek, "available", lambda: True)
     monkeypatch.setattr(extmod.zeek, "extract", _fake_zeek_handles)
     monkeypatch.setattr(extmod, "run_tool", _raise_missing_tcpdump)
 
@@ -64,6 +65,7 @@ def test_missing_tcpdump_does_not_discard_zeek_handles(tmp_path, monkeypatch):
 def test_missing_tcpdump_marker_normalizes_to_no_events(tmp_path, monkeypatch):
     from spectre.modules.pcap.normalize import normalize as pcap_normalize
     monkeypatch.setattr(extmod, "PCAP_ENGINE", "zeek")
+    monkeypatch.setattr(extmod.zeek, "available", lambda: True)
     monkeypatch.setattr(extmod.zeek, "extract", _fake_zeek_handles)
     monkeypatch.setattr(extmod, "run_tool", _raise_missing_tcpdump)
 
@@ -84,6 +86,7 @@ def test_zeek_run_failure_plus_missing_tcpdump_still_returns_without_raising(tmp
                  "size_bytes": 0}]
 
     monkeypatch.setattr(extmod, "PCAP_ENGINE", "zeek")
+    monkeypatch.setattr(extmod.zeek, "available", lambda: True)
     monkeypatch.setattr(extmod.zeek, "extract", _fail_run_handle)
     monkeypatch.setattr(extmod, "run_tool", _raise_missing_tcpdump)
 

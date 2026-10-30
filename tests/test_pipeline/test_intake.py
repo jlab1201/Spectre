@@ -123,10 +123,20 @@ def test_register_identical_resubmission_reuses_copy(tmp_path):
 # getting the naive `shutil.which(required_tools)` answer instead. The
 # behaviour asserted here is unchanged; only the monkeypatch target moved.
 
+def _pin_sleuthkit_on_path(monkeypatch, disk_av):
+    """fls/mmls must resolve so the per-file EWF probe is what decides the
+    status -- otherwise a host without Sleuth Kit reports `fls` missing."""
+    real_which = disk_av.shutil.which
+    monkeypatch.setattr(
+        disk_av.shutil, "which",
+        lambda t, *a, **k: f"/usr/bin/{t}" if t in ("fls", "mmls") else real_which(t, *a, **k))
+
+
 def test_e01_without_libewf_is_extractor_pending(tmp_path, monkeypatch):
     import spectre.pipeline.recognize as recognize
     from spectre.modules.disk import availability as disk_av
     monkeypatch.setattr(disk_av, "_EWF_SUPPORT", None)
+    _pin_sleuthkit_on_path(monkeypatch, disk_av)
     monkeypatch.setattr(disk_av, "probe_ewf_support", lambda: False)
     p = tmp_path / "image.e01"
     p.write_bytes(b"EVF\x09\x0d\x0a\xff\x00" + b"\x00" * 64)
@@ -140,6 +150,7 @@ def test_e01_with_libewf_stays_recognized(tmp_path, monkeypatch):
     import spectre.pipeline.recognize as recognize
     from spectre.modules.disk import availability as disk_av
     monkeypatch.setattr(disk_av, "_EWF_SUPPORT", None)
+    _pin_sleuthkit_on_path(monkeypatch, disk_av)
     monkeypatch.setattr(disk_av, "probe_ewf_support", lambda: True)
     p = tmp_path / "image.e01"
     p.write_bytes(b"EVF\x09\x0d\x0a\xff\x00" + b"\x00" * 64)

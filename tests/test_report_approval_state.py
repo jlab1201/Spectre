@@ -6,6 +6,8 @@ and report_docx."""
 from __future__ import annotations
 
 
+import shutil
+
 import pytest
 import yaml
 
@@ -102,6 +104,8 @@ def _case_with_report(tmp_path, decisions):
 
 def test_render_pdf_rerender_after_phase7_is_draft(tmp_path):
     pytest.importorskip("weasyprint")
+    if shutil.which("pdftotext") is None:
+        pytest.skip("needs pdftotext (poppler-utils)")
     from spectre.pipeline.report_pdf import render_pdf
     case, md = _case_with_report(tmp_path, ("APPROVED", None))
     man = {"case_id": "001", "case_name": "t", "gate_7": {"passed": True}}

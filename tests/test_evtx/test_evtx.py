@@ -9,9 +9,12 @@ The integration test runs the real evtxexport extractor over the bundled
 Sysmon UACME sample and asserts a real detection fires.
 """
 
+import shutil
 import sys
 import tempfile
 from pathlib import Path
+
+import pytest
 
 from spectre.modules import evtx
 from spectre.modules.evtx.normalize import normalize_text
@@ -681,6 +684,8 @@ def test_channel_stats_do_not_mark_4624_4625_as_parsed():
     assert len([e for e in events if e.artifact_type == "evtx_event"]) == 3
 
 
+@pytest.mark.skipif(shutil.which("evtxexport") is None,
+                    reason="needs evtxexport (libevtx-utils)")
 def test_integration_real_evtxexport():
     """Real extraction over the bundled sample must produce real events
     and at least one real detection — proving no fixture is involved."""

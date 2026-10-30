@@ -5,14 +5,23 @@ depends on the analysis host's ambient timezone (NTFS is unaffected since
 its on-disk FILETIME fields are already true UTC, but the flag is harmless
 there — same defect class as A6 Finding 1, applied to disk evidence).
 """
-from spectre.modules.disk.extract import extract
+import importlib
+
+# importlib, not `import ... as`: the package re-exports the extract FUNCTION
+# under the same name, shadowing the submodule.
+disk_extract = importlib.import_module("spectre.modules.disk.extract")
+extract = disk_extract.extract
 
 
-def test_fls_command_includes_utc_timezone_flag(tmp_path):
+def test_fls_command_includes_utc_timezone_flag(tmp_path, monkeypatch):
+    # Only the command extract() BUILDS is under test, so stub the runner:
+    # the assertion must not depend on Sleuth Kit being installed on the host.
+    monkeypatch.setattr(disk_extract, "run_tool",
+                        lambda **kw: {"result": "error", "exit_code": 1})
     case = tmp_path / "case"
     case.mkdir()
     ev = tmp_path / "disk.dd"
-    ev.write_bytes(b"\x00" * 1024)  # garbage image; fls/mmls will error, that's fine
+    ev.write_bytes(b"\x00" * 1024)
 
     handles = extract(str(case), str(ev))
     fls_handles = [h for h in handles if h.get("tool") == "fls"]
