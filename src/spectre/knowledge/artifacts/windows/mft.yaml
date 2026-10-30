@@ -1,0 +1,25 @@
+artifact: "NTFS Master File Table (MFT)"
+artifact_id: "MFT"
+source: "$MFT (NTFS metafile, entry 0)"
+parser: "MFTECmd (Zimmerman) or analyzeMFT"
+proves:
+  - "A file record ($MFT entry) existed on the volume"
+  - "File system timestamps: creation, last modified, last accessed, MFT entry modified"
+  - "File size (allocated and real)"
+  - "File attributes (hidden, system, archive, compressed, encrypted)"
+  - "The file's parent directory (via $FILE_NAME attribute)"
+  - "Whether the file record is currently allocated or unallocated (deleted)"
+does_NOT_prove:
+  - "File contents — MFT stores metadata, not file data"
+  - "File execution — MFT shows existence, not execution"
+  - "$STANDARD_INFO timestamps are reliable — they can be timestomped"
+  - "$FILE_NAME timestamps are harder to timestomp but are not always present"
+corroborate_with: ["Prefetch", "Amcache", "EVTX 4688", "USN Journal", "LNK files"]
+discipline_reminder: |
+  The MFT has two timestamp sets per file: $STANDARD_INFO (SI) and $FILE_NAME (FN).
+  SI timestamps can be modified with SetFileTime API (timestomping). FN timestamps
+  are updated by the file system and are harder — but not impossible — to tamper with.
+  A large delta between SI and FN timestamps is a strong anti-forensics indicator.
+  Deleted MFT entries (unallocated) show as "inactive" or "deleted" in most parsers.
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.50

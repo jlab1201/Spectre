@@ -1,0 +1,25 @@
+artifact: "Windows Memory — Kernel Module List (modules)"
+artifact_id: "Memory-Modules"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser: "volatility3 windows.modules.Modules"
+proves:
+  - "A kernel driver/module was present in the kernel's PsLoadedModuleList at capture time"
+  - "Its module name, on-disk (or \\SystemRoot-relative) path, and load base address"
+does_NOT_prove:
+  - "Maliciousness — the vast majority of loaded kernel modules are legitimate Windows/vendor drivers"
+  - "Completeness — modules walks a doubly-linked list; a rootkit that unlinks itself from PsLoadedModuleList will NOT appear here (corroborate with modscan/ssdt for the delta)"
+  - "That the file on disk still matches what was loaded, or that the module is currently active vs. merely still resident"
+  - "Signing status or vendor authenticity — the module list carries names/paths only, not signature verification"
+corroborate_with:
+  - "windows.modscan (pool-scan for modules, catches unlinked/hidden drivers — same 'linked list vs. pool scan' cross-check pattern as pslist/psscan)"
+  - "Memory hivelist / on-disk registry (driver service configuration under CurrentControlSet\\Services)"
+  - "EVTX Service Control Manager events (7045: new service/driver install)"
+discipline_reminder: |
+  Apply the same linked-list-vs-pool-scan discipline used for
+  pslist/psscan: a module present in a pool scan but absent from this
+  linked-list walk is a hiding indicator. Watch for a driver path outside
+  \\SystemRoot\\system32\\drivers, a module name mimicking a known-good
+  driver with a subtle misspelling, or an unusually small/large module list
+  relative to the OS baseline. discipline_reminder is analyst context, not
+  a caveat.
+confidence_weight: 1.00

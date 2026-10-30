@@ -1,0 +1,24 @@
+artifact: "Windows Memory — Network Connections (netscan)"
+artifact_id: "Memory-NetScan"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser:
+  - "volatility3 windows.netscan.NetScan"
+  - "MemProcFS sys/net/netstat-v.txt"
+proves:
+  - "A network endpoint object (TCP/UDP) was resident in memory at capture time"
+  - "Local/foreign address and port, connection state, and the owning PID/process"
+does_NOT_prove:
+  - "That the connection was active at capture — netscan recovers closed/stale objects too"
+  - "Attribution — the foreign address may be a CDN, proxy, or shared host"
+  - "Payload or intent — connection metadata alone does not prove C2 or exfiltration"
+corroborate_with:
+  - "Memory pslist (validate the owning process is legitimate)"
+  - "PCAP / firewall / IDS logs (corroborate the flow on the wire)"
+  - "Threat-intel reputation for the foreign IP/domain"
+discipline_reminder: |
+  Suspicion is generic: an unexpected owning process (a browser/Office app or a
+  service holding an outbound socket to an external IP on an odd port), beaconing
+  cadence, or a listening port on a process that should not listen. When pslist
+  shows no connections but the case implies network activity, carve the image
+  (bulk_extractor/strings) before concluding "no network".
+confidence_weight: 1.00

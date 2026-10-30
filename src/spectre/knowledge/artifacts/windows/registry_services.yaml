@@ -1,0 +1,22 @@
+artifact: "Windows Registry Services key (SYSTEM hive)"
+artifact_id: "Registry-Services"
+source: 'SYSTEM\ControlSet00N\Services\<ServiceName> (ImagePath, Start, Type, FailureCommand)'
+parser: "RegRipper services plugin (rip.pl -a)"
+proves:
+  - "A service or driver was configured in the SYSTEM hive with the recorded ImagePath, Start type and Service type"
+  - "The Services subkey was last written at the recorded LastWrite time"
+does_NOT_prove:
+  - "That the service ever started or ran — a configured service may never have been launched"
+  - "When the service was created — the LastWrite time reflects the most recent change to the key, not its creation"
+  - "That the ImagePath binary exists on disk or is unmodified"
+  - "Who created or modified the service — the registry key records no account"
+  - "That the configuration was active at acquisition time — a non-current ControlSet may hold stale values"
+corroborate_with: ["EVTX 7045", "Prefetch", "Amcache", "ShimCache", "MFT", "memory svcscan"]
+discipline_reminder: |
+  Only concretely suspicious service configurations are flagged: an ImagePath
+  (or FailureCommand) in a temp or public-profile directory, a command/script
+  interpreter or LOLBin as the launcher, %COMSPEC%, an encoded/base64 command,
+  or a PSEXESVC-style name (also implicating T1569.002). Hundreds of services
+  exist on every Windows host — presence alone is never a finding.
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.80

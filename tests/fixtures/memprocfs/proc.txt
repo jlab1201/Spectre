@@ -1,0 +1,55 @@
+  Process                      Pid Parent   Flag User             Create Time              Exit Time              
+------------------------------------------------------------------------------------------------------------------
+- System                         4      0        SYSTEM           2019-08-19 14:40:07 UTC                      ***
+-- smss.exe                    264      4        SYSTEM           2019-08-19 14:40:07 UTC                      ***
+- csrss.exe                    336    328        SYSTEM           2019-08-19 14:40:10 UTC                      ***
+- wininit.exe                  384    328        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+-- services.exe                480    384        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+--- svchost.exe                400    480        LOCAL SERVICE    2019-08-19 14:40:12 UTC                      ***
+--- svchost.exe                608    480        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+---- WmiPrvSE.exe             2292    608        SYSTEM           2019-08-19 14:40:52 UTC                      ***
+---- WmiPrvSE.exe             2896    608        NETWORK SERVICE  2019-08-19 14:40:57 UTC                      ***
+--- VBoxService.ex             668    480        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+--- svchost.exe                724    480        NETWORK SERVICE  2019-08-19 14:40:11 UTC                      ***
+--- svchost.exe                780    480        LOCAL SERVICE    2019-08-19 14:40:11 UTC                      ***
+---- audiodg.exe              1008    780        LOCAL SERVICE    2019-08-19 14:40:12 UTC                      ***
+--- SearchIndexer.             856    480        SYSTEM           2019-08-19 14:40:27 UTC                      ***
+--- svchost.exe                896    480        SYSTEM           2019-08-19 14:40:12 UTC                      ***
+---- dwm.exe                  1868    896     U  Jaffa            2019-08-19 14:40:18 UTC                      ***
+--- svchost.exe                948    480        SYSTEM           2019-08-19 14:40:12 UTC                      ***
+---- taskeng.exe              1876    948        SYSTEM           2019-08-19 14:40:18 UTC                      ***
+--- svchost.exe               1052    480        NETWORK SERVICE  2019-08-19 14:40:12 UTC                      ***
+--- spoolsv.exe               1176    480        SYSTEM           2019-08-19 14:40:13 UTC                      ***
+--- svchost.exe               1212    480        LOCAL SERVICE    2019-08-19 14:40:13 UTC                      ***
+--- sppsvc.exe                1224    480                         2019-08-19 14:42:39 UTC                      ***
+--- svchost.exe               1308    480        LOCAL SERVICE    2019-08-19 14:40:13 UTC                      ***
+--- taskhost.exe              1812    480     U  Jaffa            2019-08-19 14:40:18 UTC                      ***
+--- WmiApSrv.exe              2800    480        SYSTEM           2019-08-19 14:40:57 UTC                      ***
+-- lsass.exe                   496    384        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+-- lsm.exe                     504    384        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+- csrss.exe                    396    376        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+-- conhost.exe                 916    396     U  Jaffa            2019-08-19 14:40:26 UTC                      ***
+-- conhost.exe                4092    396     U  Jaffa            2019-08-19 14:41:55 UTC                      ***
+- winlogon.exe                 436    376        SYSTEM           2019-08-19 14:40:11 UTC                      ***
+- explorer.exe                1944   1844     U  Jaffa            2019-08-19 14:40:19 UTC                      ***
+-- cmd.exe                     880   1944     U  Jaffa            2019-08-19 14:40:26 UTC                      ***
+-- VBoxTray.exe               1108   1944     U  Jaffa            2019-08-19 14:40:20 UTC                      ***
+-- chrome.exe                 2124   1944     U* Jaffa            2019-08-19 14:40:46 UTC                      ***
+--- chrome.exe                2132   2124     U* Jaffa            2019-08-19 14:40:46 UTC                      ***
+--- chrome.exe                2168   2124     U* Jaffa            2019-08-19 14:40:49 UTC                      ***
+--- chrome.exe                2340   2124     U* Jaffa            2019-08-19 14:40:52 UTC                      ***
+--- chrome.exe                2440   2124     U* Jaffa            2019-08-19 14:40:54 UTC                      ***
+--- chrome.exe                2452   2124     U* Jaffa            2019-08-19 14:40:54 UTC                      ***
+--- chrome.exe                2940   2124     U* Jaffa            2019-08-19 14:41:06 UTC                      ***
+-- WinRAR.exe                 3716   1944     U* Jaffa            2019-08-19 14:41:43 UTC                      ***
+-- DumpIt.exe                 4084   1944 32  U* Jaffa            2019-08-19 14:41:55 UTC                      ***
+- GoogleCrashHan               924   1928      * SYSTEM           2019-08-19 14:40:19 UTC                      ***
+- GoogleCrashHan              1292   1928 32   * SYSTEM           2019-08-19 14:40:19 UTC                      ***
+- GoogleUpdate.e              2256   2396 32   * SYSTEM           2019-08-19 14:42:40 UTC                      ***
+-- GoogleCrashHan              864   2256      *                  2019-08-19 14:42:41 UTC                      ***
+-- GoogleCrashHan             1192   2256 32   * SYSTEM           2019-08-19 14:42:41 UTC                      ***
+- firefox.exe                 2080   3060 32  U* Jaffa            2019-08-19 14:41:08 UTC                      ***
+-- firefox.exe                2860   2080 32  U* Jaffa            2019-08-19 14:41:09 UTC                      ***
+-- firefox.exe                2968   2080 32  U* Jaffa            2019-08-19 14:41:11 UTC                      ***
+-- firefox.exe                3016   2080 32  U* Jaffa            2019-08-19 14:41:10 UTC                      ***
+-- firefox.exe                3316   2080 32  U* Jaffa            2019-08-19 14:41:13 UTC                      ***

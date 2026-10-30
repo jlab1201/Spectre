@@ -1,0 +1,12 @@
+Ordinal:          27
+Service Name:     AudioSrv
+Display Name:     Windows Audio
+Record Address:   0x0000001c2690
+Start Type:       SERVICE_AUTO_START (0x2)
+Service State:    SERVICE_RUNNING (0x4)
+Service Type:     SERVICE_WIN32_SHARE_PROCESS (0x20)
+Process ID (PID): 780
+Path:             C:\Windows\System32\svchost.exe -k LocalServiceNetworkRestricted
+Image Path:       
+User Type:        
+User Account:     LOCAL SERVICE

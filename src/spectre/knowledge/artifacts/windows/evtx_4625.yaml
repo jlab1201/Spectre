@@ -1,0 +1,22 @@
+artifact: "Windows Security EVTX 4625 aggregate (Logon Failure / Brute Force)"
+artifact_id: "EVTX-Security-4625-Aggregate"
+source: "Security.evtx, Event ID 4625 — aggregated across the whole file per source IP"
+parser: "evtxexport -> normalize.py (_aggregate_failed_logons)"
+proves:
+  - "At least the reported count of distinct logon-failure events were recorded from the reported source IP within the reported window"
+  - "The set of target account names those failures attempted"
+does_NOT_prove:
+  - "That any single-host EVTX capture reflects the FULL attack — a distributed/slow brute force spread across many source IPs or a longer window than scanned will not cross this threshold"
+  - "Attacker success — this rule only fires on FAILURES; a following successful logon (4624) from the same source is a separate, uncorroborated fact unless independently checked"
+  - "That the source IP is externally hosted/malicious by itself — internal/external classification needs network context this module does not have"
+corroborate_with: ["EVTX 4624 from the same source IP shortly after", "firewall/pcap logs for the source IP", "account lockout events (4740)"]
+discipline_reminder: |
+  This is a whole-file aggregate, not a single event: the underlying rule requires at
+  least 10 logon failures from the same source IP within a 10-minute sliding window
+  before it fires at all (both constants are in normalize.py, not tunable per-case
+  here). A source IP just under threshold is not reported, so absence of this finding
+  is not evidence of no brute-force attempt. Local/blank source addresses are grouped
+  under a placeholder key, never merged into a real attacker IP's count.
+  NOTE: `discipline_reminder` is NOT a caveat — it is injected into the explain prompt
+  as analyst context. Caveats in findings come from `does_NOT_prove` only, verbatim.
+confidence_weight: 0.80

@@ -1,0 +1,11 @@
+name: prefetch
+artifact: prefetch
+summary: >-
+  Windows Prefetch (.pf). Stdlib parser for uncompressed versions; no external
+  tool, so this module is available on every host.
+tools: []
+tool_optional: false
+optional_tools: []
+python_deps: []
+python_deps_optional: []
+fk_yamls: [prefetch]

@@ -1,0 +1,27 @@
+artifact: "Windows Memory — Loaded DLL List (dlllist)"
+artifact_id: "Memory-DllList"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser: "volatility3 windows.dlllist.DllList"
+proves:
+  - "A DLL was mapped into a specific process's address space at capture time"
+  - "The owning process's PID and image name, the DLL's on-disk path (as recorded in the PEB loader list), and its load base address"
+does_NOT_prove:
+  - "Maliciousness — the overwhelming majority of loaded DLLs are normal system/application dependencies"
+  - "That the DLL file on disk still matches what was loaded — the path is a PEB record, not a live read of the file, and the file may have since changed or been deleted"
+  - "Completeness — dlllist walks the PEB loader lists; DLLs unlinked from those lists (manual-mapped/reflective loads) will NOT appear here (corroborate with malfind/vadinfo)"
+  - "Load order or intent — dlllist is a point-in-time snapshot, not a timeline of load events"
+corroborate_with:
+  - "Memory pslist/psscan (owning process context)"
+  - "Memory malfind (unlinked/manually-mapped modules that dlllist will miss)"
+  - "Memory filescan (does the DLL path actually exist as a file object in memory)"
+discipline_reminder: |
+  Look for a DLL path outside the normal System32/SysWOW64/Program Files
+  tree (Temp, AppData, user profile roots, ProgramData) loaded into a
+  process that would not normally load third-party code, an unsigned DLL
+  masquerading with a system-DLL name, or a process with a suspiciously
+  short DLL list (proxy DLL injection sometimes strips/limits the list).
+  A process's ABSENCE from dlllist despite injected-code findings in
+  malfind is itself a signal — that code was mapped without going through
+  the normal loader path. discipline_reminder is analyst context, not a
+  caveat.
+confidence_weight: 1.00

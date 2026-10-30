@@ -1,0 +1,25 @@
+artifact: "Windows System Resource Usage Monitor (SRUM)"
+artifact_id: "SRUM"
+source: 'C:\Windows\System32\sru\SRUDB.dat'
+parser: "SrumECmd (Zimmerman)"
+proves:
+  - "Process runtime (foreground and background CPU time)"
+  - "Network bytes sent and received per application per hour"
+  - "Network connectivity duration per application"
+  - "Application-specific data usage (by SID)"
+  - "Energy usage and battery drain per application"
+does_NOT_prove:
+  - "Which specific network endpoints (IPs/domains) were contacted"
+  - "The exact command line of the process — only the binary path"
+  - "Process parent-child relationships"
+  - "Real-time activity — SRUM aggregates in ~1 hour windows"
+corroborate_with: ["EVTX 4688", "Prefetch", "EVTX 5156 (Network Connect)", "netscan"]
+discipline_reminder: |
+  SRUM is a Windows 8+ database that tracks resource usage in 1-hour buckets.
+  It survives reboots and retains up to 30-60 days of data. Key tables:
+  {973F5D5C-1D90-4944-BE8E-24B94231A174} for network usage,
+  {D10CA2FE-6FCF-4F6D-848E-B2E99266FA89} for application resource usage.
+  A process with high network bytes but 0 CPU seconds is suspicious
+  (data exfiltration without visible CPU activity).
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.80

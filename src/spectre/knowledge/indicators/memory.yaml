@@ -1,0 +1,26 @@
+benign_malfind_processes:
+  description: 'Known JIT-compiling / self-modifying-code processes whose malfind
+    hits (private, committed, executable memory) are routine, not injection.
+    explorer.exe and wmiprvse.exe are deliberately EXCLUDED — they are common
+    injection TARGETS, not JIT processes (closes memory_malfind_explorer_allowlisted).
+
+    '
+  values:
+  - chrome.exe
+  - firefox.exe
+  - msedge.exe
+  - brave.exe
+  - opera.exe
+
+injection_target_processes:
+  description: 'Common reflective/process-injection TARGET processes — hosts
+    attackers inject into, not JIT/self-modifying-code processes. They stay
+    OFF benign_malfind_processes (a malfind hit here can be a real injection),
+    but a bare hit with no corroborating signal is confidence-calibrated down
+    (Track D, closes gold case 004 FP on explorer.exe/WmiPrvSE.exe) instead of
+    being dropped.
+
+    '
+  values:
+  - explorer.exe
+  - wmiprvse.exe

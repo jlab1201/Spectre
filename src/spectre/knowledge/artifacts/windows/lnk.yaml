@@ -1,0 +1,25 @@
+artifact: "Windows LNK (Shortcut) Files"
+artifact_id: "LNK"
+source: "*.lnk files (Recent Items, Quick Launch, User Pinned, automatic destinations)"
+parser: "LECmd (Zimmerman) or lnk-parser"
+proves:
+  - "A file or folder was accessed (opened, executed, or browsed)"
+  - "The target path of the referenced item"
+  - "Volume serial number and volume name of the drive hosting the target"
+  - "MAC timestamps of the target file at the time the LNK was created"
+  - "File size of the target at LNK creation time"
+  - "NetBIOS name and MAC address of the system (for network shares)"
+does_NOT_prove:
+  - "The target file still exists — LNKs persist after target deletion"
+  - "The target file was executed — LNKs are created for file opens, not just execution"
+  - "The user intentionally accessed the file — automatic LNK creation occurs"
+corroborate_with: ["Prefetch", "EVTX 4688", "MFT", "Amcache", "Shellbags", "Jump Lists"]
+discipline_reminder: |
+  LNK files are created automatically by Windows Explorer and the Start Menu.
+  Key locations: %USERPROFILE%\AppData\Roaming\Microsoft\Windows\Recent\
+  and %APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations\.
+  LNK files may persist even after the target is deleted from disk, making them
+  valuable for showing a file once existed. The embedded MAC timestamps capture
+  the target's state at LNK creation time — great for timeline analysis.
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.60

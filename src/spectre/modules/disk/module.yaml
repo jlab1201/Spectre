@@ -1,0 +1,12 @@
+name: disk
+artifact: disk_image
+summary: >-
+  Disk image (.dd/.raw/.E01). Filesystem timeline via Sleuth Kit. EWF/E01
+  support depends on the local build being linked against libewf — the
+  module's availability() hook probes for it per file.
+tools: [fls, mmls]
+tool_optional: false
+optional_tools: []
+python_deps: []
+python_deps_optional: []
+fk_yamls: [disk_image]

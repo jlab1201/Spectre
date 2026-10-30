@@ -1,0 +1,26 @@
+name: evtx
+artifact: process_creation
+summary: >-
+  Windows Event Log (.evtx). Process-creation analysis via the evtxexport
+  binary from libevtx-utils, plus log-clear/service-install/scriptblock/
+  logon-aggregate detection over the generic event stream.
+tools: [evtxexport]
+tool_optional: false
+optional_tools: []
+python_deps: []
+python_deps_optional: []
+# Six FK YAMLs now (was one) because this module's rules span six distinct
+# artifact types, each needing its own caveats — see fk_by_artifact below.
+# Once fk_yamls has more than one entry, fk_routing.py stops falling back to
+# a single implicit FK, so every rule-emitted artifact type MUST have an
+# explicit fk_by_artifact entry or it is left unrouted (tests/test_fk_routing.py
+# fails loudly rather than letting it silently inherit evtx_4688's caveats —
+# see R3-08 / fk_routing.py's own docstring for why that matters).
+fk_yamls: [evtx_4688, evtx_1102, evtx_7045, evtx_4104, evtx_4625, evtx_4624]
+fk_by_artifact:
+  process_creation: evtx_4688
+  evtx_log_cleared: evtx_1102
+  evtx_service_install: evtx_7045
+  evtx_scriptblock: evtx_4104
+  evtx_4625_aggregate: evtx_4625
+  evtx_4624_rdp_aggregate: evtx_4624

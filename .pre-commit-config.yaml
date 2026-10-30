@@ -1,0 +1,24 @@
+# Local hooks only (no network). Not installed by default: run `pre-commit install` once approved.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff check
+        entry: ./venv/bin/ruff check src tests
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: pytest
+        name: pytest -q -x
+        entry: ./venv/bin/pytest -q -x
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: spectre-canary
+        name: spectre-canary
+        entry: ./venv/bin/spectre-canary
+        language: system
+        pass_filenames: false
+# graphify (optional, local) is NOT a hook: its output is not byte-deterministic, so an
+# automatic refresh dirties the tree on every commit. Refresh manually with
+# `graphify update .` before a commit that changes src/ structure.

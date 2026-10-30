@@ -1,0 +1,12 @@
+Ordinal:          284
+Service Name:     Spooler
+Display Name:     Print Spooler
+Record Address:   0x0000001d1ed0
+Start Type:       SERVICE_AUTO_START (0x2)
+Service State:    SERVICE_RUNNING (0x4)
+Service Type:     SERVICE_WIN32_OWN_PROCESS|SERVICE_INTERACTIVE_PROCESS (0x110)
+Process ID (PID): 1176
+Path:             C:\Windows\System32\spoolsv.exe
+Image Path:       
+User Type:        
+User Account:     SYSTEM

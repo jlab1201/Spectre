@@ -1,0 +1,12 @@
+Ordinal:          20
+Service Name:     Appinfo
+Display Name:     Application Information
+Record Address:   0x0000001c21b0
+Start Type:       SERVICE_DEMAND_START (0x3)
+Service State:    SERVICE_RUNNING (0x4)
+Service Type:     SERVICE_WIN32_SHARE_PROCESS (0x20)
+Process ID (PID): 948
+Path:             C:\Windows\system32\svchost.exe -k netsvcs
+Image Path:       
+User Type:        
+User Account:     SYSTEM

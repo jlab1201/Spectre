@@ -1,0 +1,22 @@
+artifact: "Windows Security EVTX 4624 aggregate (RDP Logon Success)"
+artifact_id: "EVTX-Security-4624-RDP-Aggregate"
+source: "Security.evtx, Event ID 4624, LogonType 10 — aggregated per (source IP, account)"
+parser: "evtxexport -> normalize.py (_aggregate_rdp_logons)"
+proves:
+  - "A successful interactive logon with LogonType 10 (RemoteInteractive/RDP) occurred from the reported non-local source IP, as the reported account, the reported number of times"
+does_NOT_prove:
+  - "That the logon was unauthorized — RDP is routine for legitimate remote administration, helpdesk, and jump-box access"
+  - "That the source IP is external to the organization — this module has no network-range context to classify internal vs. external addresses"
+  - "What the session did after logon — corroborate with 4688/Sysmon-1 process creation under that logon session for post-logon activity"
+corroborate_with: ["EVTX 4688/Sysmon-1 process creation under the same LogonId", "Firewall/pcap logs for the source IP", "VPN or jump-box connection logs"]
+discipline_reminder: |
+  Deliberately low-confidence and framed as a LEAD, not an accusation: check whether
+  the source IP matches a known admin workstation, VPN range, or jump-box before
+  escalating. Only LogonType 10 (RemoteInteractive) from a non-local IpAddress is
+  aggregated here — a LogonType 3 (Network) fan-out-to-many-hosts lateral-movement
+  pattern is explicitly out of scope for a single-host EVTX capture, which cannot see
+  "many hosts" by itself; that needs cross-host correlation this module does not have
+  data for.
+  NOTE: `discipline_reminder` is NOT a caveat — it is injected into the explain prompt
+  as analyst context. Caveats in findings come from `does_NOT_prove` only, verbatim.
+confidence_weight: 0.40

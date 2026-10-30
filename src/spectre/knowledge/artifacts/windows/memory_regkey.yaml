@@ -1,0 +1,21 @@
+artifact: "Windows Memory — Registry Autostart Keys (printkey)"
+artifact_id: "Memory-RegKey"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp) — in-memory registry hives"
+parser: "volatility3 windows.registry.printkey.PrintKey (Run/RunOnce/Winlogon)"
+proves:
+  - "An autostart value (Run/RunOnce/Winlogon) was present in an in-memory hive at capture"
+  - "The key path, value name, value data, and last-write time of the containing key"
+does_NOT_prove:
+  - "That the referenced binary executed, or still exists on disk"
+  - "That the entry is malicious — many vendors register legitimate Run values"
+  - "When the value was written — last-write time is the key's, not necessarily this value's"
+corroborate_with:
+  - "Memory filescan/dumpfiles for the referenced executable (then hash)"
+  - "On-disk registry hives (SOFTWARE/NTUSER) and Autoruns"
+  - "Prefetch/Amcache (did the referenced binary actually run?)"
+discipline_reminder: |
+  This is SANS step 5 (persistence). Generic suspicion: a Run/RunOnce value pointing
+  into Temp/AppData/a user profile, a randomly named value, a script host or LOLBin
+  command, or a modified Winlogon Shell/Userinit. The in-memory hive reflects state at
+  capture, which can differ from the on-disk hive — note the discrepancy when present.
+confidence_weight: 0.90

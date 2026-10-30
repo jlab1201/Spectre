@@ -1,0 +1,109 @@
+# Shared process-name indicator lists used by rule packs.
+# Edit here to tune detections across modules. Names are lowercase basenames.
+# Loaded via knowledge.load_indicator_list("processes", "<key>").
+
+offensive_tools:
+  description: Known offensive / post-exploitation tool process names (memory pslist).
+  values: [mimikatz.exe, procdump.exe, psexec.exe, nc.exe, ncat.exe, meterpreter, cobaltstrike]
+
+archive_tools:
+  description: Archive utilities commonly used to stage data for exfiltration (T1560).
+  values: [winrar.exe, rar.exe, 7z.exe, 7za.exe, winzip.exe, zip.exe, tar.exe, makecab.exe]
+
+memory_acquisition_tools:
+  description: Memory-acquisition tool executables whose presence on disk marks the
+    image as a forensic/CTF acquisition capture (neutral benign-context signal, not
+    compromise). Matched as a substring of a filescan basename.
+  values: [dumpit, winpmem, ftkimager, magnetram, belkasoftramcapturer, ramcapture, aff4acquire]
+
+memory_shell_hosts:
+  description: Shell/script hosts whose anomalous parent suggests proxy execution (memory).
+  values: [cmd.exe, powershell.exe, pwsh.exe, wscript.exe, cscript.exe, mshta.exe, rundll32.exe, regsvr32.exe]
+
+suspect_parents:
+  description: Office/browser/web-server parents that should not normally spawn a shell.
+  values: [iexplore.exe, firefox.exe, chrome.exe, msedge.exe, winword.exe, excel.exe,
+           powerpnt.exe, outlook.exe, w3wp.exe, httpd.exe, nginx.exe, tomcat.exe,
+           sqlservr.exe, acrord32.exe]
+
+singleton_processes:
+  description: Core Windows binaries that should run as a single instance.
+  values: [wininit.exe, services.exe, lsass.exe, lsm.exe]
+
+system_process_names:
+  description: Canonical Windows system process names (for masquerade/homoglyph checks).
+  values: [svchost, lsass, services, csrss, wininit, winlogon, smss, explorer, spoolsv, lsm, taskhostw, taskhost]
+
+benign_env_vars:
+  description: Standard Windows env-var names never treated as secrets even if they match.
+  values: [path, pathext, windir, systemroot, temp, tmp, username, computername, processor_architecture]
+
+lolbins:
+  description: Living-off-the-land binaries abused for proxy execution (evtx process_creation).
+  values: [rundll32.exe, regsvr32.exe, mshta.exe, cscript.exe, wscript.exe, msbuild.exe, installutil.exe, regsvcs.exe]
+
+command_shells:
+  description: Command and script shells (evtx process_creation lineage checks).
+  values: [cmd.exe, powershell.exe, pwsh.exe, wscript.exe, cscript.exe, mshta.exe, bitsadmin.exe]
+
+office_apps:
+  description: Microsoft Office applications (suspicious as a shell parent).
+  values: [winword.exe, excel.exe, powerpnt.exe, outlook.exe, mspub.exe, msaccess.exe]
+
+uac_autoelevate:
+  description: Auto-elevating binaries abused for UAC bypass (T1548.002).
+  values: [fodhelper.exe, eventvwr.exe, sdclt.exe, computerdefaults.exe, slui.exe, wsreset.exe]
+
+benign_appdata_vendors:
+  description: 'Narrow allowlist of stock, vendor-recommended AppData
+    install paths for common consumer software (A4-04). %LocalAppData%/
+    %AppData% is Microsoft''s own recommended per-user install location, so
+    a Run-key entry alone under one of these vendor paths is downgraded to
+    a low, non-CONFIRMED-eligible confidence rather than silently dropped —
+    it still surfaces as a finding with an explanatory note. Matched as a
+    substring of the (lowercased) Run-key value data. Deliberately narrow:
+    only well-known first-party consumer apps, not a blanket AppData
+    exemption. Any strong co-occurring signal (a LOLBIN/script-host token
+    in the SAME value) overrides this allowlist entirely — see
+    modules/registry_hive/rules.py run_key_persistence().
+
+    '
+  values:
+  - '\microsoft\onedrive\onedrive.exe'
+  - '\discord\update.exe'
+  - '\dropbox\update.exe'
+  - '\dropbox\client\dropbox.exe'
+  - '\spotify\spotify.exe'
+  - '\slack\update.exe'
+  - '\zoom\bin\zoom.exe'
+
+expected_process_parents:
+  description: Expected parent for core Windows binaries; a wrong parent is high signal.
+  mapping:
+    services.exe: wininit.exe
+    lsass.exe: wininit.exe
+    lsm.exe: wininit.exe
+    svchost.exe: services.exe
+
+installer_filenames:
+  description: >-
+    Installer / redistributable bootstrap filenames. Used ONLY together with an
+    installer extraction-directory pattern (core/markers.py) to demote a
+    temp-path cache hit — never on the name alone, so naming malware
+    "vcredist" does not demote it. An entry ending in `.exe` must equal the
+    basename; a bare prefix (e.g. `vcredist`) matches the start of it.
+  values: [setup.exe, setup64.exe, install.exe, installer.exe, vcredist, vc_redist]
+
+anti_forensic_wipers:
+  description: >-
+    Secure-delete / trace-cleaner tool names (T1070.004 File Deletion). Many are
+    also legitimate admin or privacy tools. `.exe` entries match the basename
+    exactly; bare names match as a substring.
+  values: [sdelete.exe, sdelete64.exe, sdelete64a.exe, eraser.exe, eraserl.exe,
+           privazer.exe, bleachbit, ccleaner]
+
+anti_forensic_timestompers:
+  description: >-
+    Timestamp-manipulation tool names (T1070.006 Timestomp). `.exe` entries match
+    the basename exactly; bare names match as a substring.
+  values: [timestomp, setmace]  # `timestomp` also covers nTimestomp

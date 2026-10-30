@@ -1,0 +1,52 @@
+name: memory
+artifact: memory_image
+summary: >-
+  Memory image (.raw/.mem/.vmem/.lime). Triage via volatility3, with MemProcFS
+  as an optional second engine for cross-validation.
+tools: [vol]
+tool_optional: false
+optional_tools: [memprocfs]
+python_deps: []
+# pefile is volatility3's only hard requirement, so a missing pefile means a
+# broken `vol`. Advisory rather than required: `vol` may be installed in its
+# own environment, where our interpreter's find_spec says nothing useful. A
+# false "memory unavailable" would be worse than a note.
+python_deps_optional: [pefile]
+
+# Forensic knowledge. Loaded at Phase 0 for a recognized memory image: every
+# volatility plugin this module can run carries its own volatile-evidence
+# caveats, so the whole set travels with the artifact.
+fk_yamls:
+  - memory_pslist
+  - memory_netscan
+  - memory_cmdline
+  - memory_malfind
+  - memory_filescan
+  - memory_envar
+  - memory_regkey
+  - memory_url
+  - memory_psscan
+  - memory_svcscan
+  - memory_dlllist
+  - memory_modules
+  - memory_hivelist
+
+# memory is the ONLY module whose rules span more than one FK YAML, so it is the
+# only one that needs this table — every other module resolves from its single
+# fk_yamls entry. Each memory_* rule artifact_type must name its own FK: a
+# memory_netscan finding carrying memory_pslist's caveats would cite the wrong
+# volatility plugin. memory_psscan is here because it was MISSING from the old
+# central table and silently fell through to evtx_4688.yaml, pasting Windows
+# 4688 "corroborate with Prefetch/Amcache/MFT" caveats onto a memory finding —
+# the same defect that was fixed for pcap twice and never generalised.
+fk_by_artifact:
+  memory_pslist: memory_pslist
+  memory_netscan: memory_netscan
+  memory_cmdline: memory_cmdline
+  memory_malfind: memory_malfind
+  memory_filescan: memory_filescan
+  memory_envar: memory_envar
+  memory_regkey: memory_regkey
+  memory_url: memory_url
+  memory_psscan: memory_psscan
+  memory_svcscan: memory_svcscan

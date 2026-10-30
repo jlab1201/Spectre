@@ -1,0 +1,12 @@
+Ordinal:          2
+Service Name:     ACPI
+Display Name:     Microsoft ACPI Driver
+Record Address:   0x0000001b13e0
+Start Type:       SERVICE_BOOT_START (0x0)
+Service State:    SERVICE_RUNNING (0x4)
+Service Type:     SERVICE_KERNEL_DRIVER (0x1)
+Process ID (PID): 0
+Path:             \Driver\ACPI
+Image Path:       
+User Type:        
+User Account:     

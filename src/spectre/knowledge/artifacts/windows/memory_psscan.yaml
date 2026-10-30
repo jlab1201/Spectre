@@ -1,0 +1,27 @@
+artifact: "Windows Memory — Process Scan (psscan)"
+artifact_id: "Memory-PsScan"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser: "volatility3 windows.psscan.PsScan"
+proves:
+  - "A process (or a former process) has an _EPROCESS pool allocation somewhere in physical memory"
+  - "Its PID, PPID (parent), image name, and (when present) create time"
+  - "Processes that pslist's linked-list walk misses — psscan scans the pool directly, so it can surface UNLINKED (hidden/DKOM-manipulated) or recently exited processes"
+does_NOT_prove:
+  - "That the process is currently running — a psscan hit can be a stale/exited process whose pool page has not been reused yet"
+  - "Maliciousness — a process only in psscan (not pslist) is a hiding INDICATOR, not proof of rootkit activity by itself"
+  - "Full image path or command line — psscan carries the image name, not its on-disk path or arguments (use cmdline/dlllist)"
+  - "That every entry is exploitable evidence — some legitimate short-lived processes exit and their pool slot lingers briefly before reuse"
+corroborate_with:
+  - "Memory pslist (the delta between psscan and pslist is the key signal — anything in psscan but NOT pslist warrants scrutiny)"
+  - "Memory cmdline (full path + arguments for surviving processes)"
+  - "EVTX 4688 / Prefetch / Amcache (on-disk execution evidence)"
+discipline_reminder: |
+  The single most valuable use of psscan is the CROSS-CHECK against pslist:
+  compute the delta (PID present in psscan but absent from pslist). A
+  non-empty delta is a classic process-hiding indicator (DKOM unlinking,
+  rootkit). Do not flag every psscan row as suspicious — most will also
+  appear in pslist and are simply corroborating the same live process set.
+  Apply the same SANS rogue-process heuristics (wrong parent, singleton
+  violation, masquerade name) to psscan-only survivors as pslist.
+  discipline_reminder is analyst context, not a caveat.
+confidence_weight: 1.00

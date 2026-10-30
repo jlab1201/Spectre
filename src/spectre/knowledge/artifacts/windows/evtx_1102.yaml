@@ -1,0 +1,23 @@
+artifact: "Windows Security/System EVTX 1102/104 (Log Cleared)"
+artifact_id: "EVTX-LogCleared-1102-104"
+source: "Security.evtx Event ID 1102, or System.evtx / any channel Event ID 104"
+parser: "evtxexport -> normalize.py"
+proves:
+  - "The named event log was cleared at the recorded time"
+  - "The account that issued the clear, when SubjectUserName is populated"
+does_NOT_prove:
+  - "Malicious intent — scheduled log rotation/retention tooling can also clear a log"
+  - "What was in the log before it was cleared — the clear event itself carries no content from before it"
+  - "That no other log-clearing or evidence-tampering occurred outside this one channel"
+corroborate_with: ["Other channel's own log-clear events", "backup .evtx exports (BackupPath field)", "SIEM/forwarder copies made before the clear"]
+discipline_reminder: |
+  A cleared log is a discrete, high-signal anti-forensics event — no threshold or
+  co-occurring indicator is required to treat it as worth investigating. But "cleared"
+  says nothing about WHY: check whether audit policy or a documented maintenance
+  window explains it before treating it as hostile. The clear event itself always
+  survives (the log service logs its own clearing), which is why 1102/104 can be
+  detected even though the contents it destroyed cannot be recovered from the EVTX
+  file itself — only from a prior export/forwarder copy, if one exists.
+  NOTE: `discipline_reminder` is NOT a caveat — it is injected into the explain prompt
+  as analyst context. Caveats in findings come from `does_NOT_prove` only, verbatim.
+confidence_weight: 0.90

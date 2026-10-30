@@ -1,0 +1,26 @@
+artifact: "Filesystem Timeline from a Disk Image (fls body format)"
+artifact_id: "DISK-fls-timeline"
+source: "Raw/E01 disk image, walked via TSK fls into a bodyfile timeline"
+parser: "mmls (partition table), fls -r -m (bodyfile), mactime"
+proves:
+  - "A filesystem entry (file or directory name) existed in the given partition at the recorded MACB times"
+  - "The entry's logical size and inode/MFT record number as reported by the filesystem"
+  - "Directory structure and naming (including recovered deleted-entry names, where the metadata survives)"
+does_NOT_prove:
+  - "That MACB timestamps are authentic — fls reports filesystem METADATA, and metadata timestamps are trivially forgeable (timestomping); corroborate with $LogFile, $UsnJrnl, prefetch, or event logs before treating a time as ground truth."
+  - "That a deleted entry's recovered NAME implies its content is recoverable or was even examined — this pass surfaces names, not carved content."
+  - "That a file's NAME reflects its actual content or purpose — an entry named calc.exe proves a name existed, not that the bytes at that inode are a legitimate (or any) Windows calculator binary."
+  - "That every partition on the image was walked — fls run against a whole-disk image without an explicit offset can miss partitions entirely; mmls output must be cross-checked against the fls invocation to confirm partition coverage."
+  - "That NTFS-resident data, alternate data streams (ADS), or slack space were surfaced — a name-level bodyfile timeline does not enumerate $MFT resident attributes, ADS, or unallocated/slack bytes trailing a cluster."
+corroborate_with: ["mmls partition table", "$MFT / $LogFile / $UsnJrnl", "Prefetch", "Amcache", "Registry ShimCache", "Endpoint process logs (EVTX 4688)"]
+discipline_reminder: |
+  A bodyfile timeline is a filesystem-metadata index, not a content examination. MACB times come
+  from filesystem attributes an attacker with sufficient privilege can rewrite (timestomping) —
+  a single suspicious timestamp is a lead, not proof, until corroborated by an independent source
+  (journal records, prefetch run times, event logs). Always confirm fls was run against the correct
+  partition offset(s) reported by mmls; a raw image walked without an offset commonly enumerates
+  only the first partition or misses partitions entirely. A recovered deleted-entry NAME is not
+  recovered content — do not describe a deleted entry as "confirmed" malware without content-level
+  analysis (hashing, carving, or execution artifacts) from a later phase.
+  NOTE: discipline_reminder is NOT a caveat — it is analyst context for the explain prompt.
+confidence_weight: 0.75

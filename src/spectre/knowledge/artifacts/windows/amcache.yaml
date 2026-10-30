@@ -1,0 +1,26 @@
+artifact: "Windows Amcache (RecentFileCache)"
+artifact_id: "Amcache"
+source: "C:\\Windows\\AppCompat\\Programs\\Amcache.hve"
+parser: "AmcacheParser (Zimmerman) or amcache.py"
+proves:
+  - "A file existed on the system at a specific path"
+  - "SHA1 hash of the file (for large files, of the first ~30 MB only) when the inventory entry was written"
+  - "When the inventory entry was last written (File key LastWrite)"
+  - "File size and PE metadata (if a PE binary)"
+  - "Whether the binary was a GUI or console application"
+does_NOT_prove:
+  - "That the file was executed — Amcache inventories files it discovers (installers, scans, shortcuts), so an entry is not proof of execution"
+  - "Any execution time — the key LastWrite records when the inventory entry was written, not when the file ran"
+  - "Current presence — the file may have been deleted"
+  - "User context — Amcache is system-wide, not per-user"
+  - "Network activity — no network indicators in Amcache"
+corroborate_with: ["Prefetch", "EVTX 4688", "ShimCache", "MFT", "Registry MRU"]
+discipline_reminder: |
+  Amcache entries are created/updated by the Application Experience service.
+  On Windows 10/11, Amcache replaces the older RecentFileCache.bcf format.
+  SHA1 is only populated for PE files with a valid digital signature or
+  when Windows computes the hash. Non-PE files may lack SHA1.
+  An entry in Amcache with a short time gap between the file's compile time
+  and the Amcache timestamp suggests a recently-compiled binary (suspicious).
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.75

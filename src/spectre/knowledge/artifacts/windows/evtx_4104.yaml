@@ -1,0 +1,24 @@
+artifact: "Windows PowerShell EVTX 4104 (ScriptBlock Logging)"
+artifact_id: "EVTX-PowerShell-4104"
+source: "Microsoft-Windows-PowerShell/Operational.evtx, Event ID 4104"
+parser: "evtxexport -> normalize.py"
+proves:
+  - "The exact PowerShell scriptblock text that was executed or compiled at the recorded time"
+  - "The ScriptBlockId, allowing related MessageNumber/MessageTotal parts of a large script to be reassembled"
+does_NOT_prove:
+  - "That the script's effects succeeded — ScriptBlock logging captures what ran, not its outcome"
+  - "Who ran it — 4104 records only the account SID (System/Security UserID), not a username or session; resolve the SID and corroborate with the surrounding 4688/Sysmon-1 process-creation event for that host process"
+  - "That credentials were dumped or that AMSI was actually disabled — an Invoke-Mimikatz or AMSI-bypass string in a scriptblock shows the script referenced it, not that it ran successfully or had effect"
+  - "That every suspicious-looking token is malicious — encoding and IEX/download-cradle patterns are also used by legitimate deployment and admin scripts"
+corroborate_with: ["EVTX 4688 (the powershell.exe process creation)", "Sysmon EventID 1", "Module/Transcription logging if enabled"]
+discipline_reminder: |
+  Requires PowerShell ScriptBlock logging to be enabled (it is off by default on
+  older Windows versions; on by newer defaults/GPO). Its absence in a case means no
+  4104 events regardless of what actually ran — do not read the absence of 4104 as
+  evidence nothing suspicious happened. Flagged patterns: an encoded/base64 command
+  (T1027), an IEX/Invoke-Expression combined with a remote-download call — a
+  download cradle (T1105, only when both are present), an AMSI-bypass string (T1562.001), or an
+  Invoke-Mimikatz reference (T1003.001). Base technique is always T1059.001.
+  NOTE: `discipline_reminder` is NOT a caveat — it is injected into the explain prompt
+  as analyst context. Caveats in findings come from `does_NOT_prove` only, verbatim.
+confidence_weight: 0.90

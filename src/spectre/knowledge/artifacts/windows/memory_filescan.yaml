@@ -1,0 +1,27 @@
+artifact: "Windows Memory — File Objects (filescan)"
+artifact_id: "Memory-FileScan"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+# Single-engine. MemProcFS is not a second source here: it publishes per-process
+# open-handle tables, not a FILE_OBJECT scan of physical memory, so it cannot
+# corroborate a filescan hit — see discipline_reminder.
+parser: "volatility3 windows.filescan.FileScan"
+proves:
+  - "A FILE_OBJECT for the named path was resident in memory at capture time"
+  - "The physical offset of that object, enabling recovery via dumpfiles"
+does_NOT_prove:
+  - "That the file still exists on disk — the object may persist after deletion"
+  - "That the process under investigation opened it — filescan is system-wide"
+  - "Content — the path is metadata; carve the object to inspect bytes"
+corroborate_with:
+  - "Memory dumpfiles (recover the object by offset, then hash)"
+  - "MFT / disk image (confirm on-disk presence and timestamps)"
+discipline_reminder: |
+  filescan is the bridge to SANS step 6 (dump & examine): a suspicious path here
+  (archive in a user profile, payload in Temp/AppData, a tool name) gives the
+  physical offset to recover with dumpfiles, then hash and reputation-check. The
+  in-memory copy often survives on-disk deletion — valuable for anti-forensics cases.
+  A per-process handle table is NOT a substitute source for this artifact: handles
+  enumerate what was open, filescan scans physical memory for file objects whether
+  or not any process still holds them, so absence from a handle table refutes
+  nothing. discipline_reminder is analyst context, not a caveat.
+confidence_weight: 0.90

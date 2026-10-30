@@ -1,0 +1,11 @@
+name: logfile
+artifact: logfile_record
+summary: >-
+  Generic CSV / unix .log evidence. Memory-bounded streaming parse; no
+  external tool, so this module is available on every host.
+tools: []
+tool_optional: false
+optional_tools: []
+python_deps: []
+python_deps_optional: []
+fk_yamls: [logfile]

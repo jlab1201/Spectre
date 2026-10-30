@@ -1,0 +1,22 @@
+artifact: "Windows System EVTX 7045 (Service Installed)"
+artifact_id: "EVTX-System-7045"
+source: "System.evtx, Event ID 7045, Provider Service Control Manager"
+parser: "evtxexport -> normalize.py"
+proves:
+  - "A new service was registered with the Service Control Manager at the recorded time"
+  - "The service's declared ImagePath, ServiceType, StartType, and AccountName at install time"
+does_NOT_prove:
+  - "That the service ever actually started or ran — 7045 fires on install/registration, not on start"
+  - "That the ImagePath binary still exists on disk, or is unmodified since install"
+  - "Who installed it, beyond whatever account/session context evtxexport surfaces separately"
+corroborate_with: ["Prefetch", "Amcache", "EVTX 4688 (process creation for services.exe's child)", "Registry HKLM\\SYSTEM\\CurrentControlSet\\Services"]
+discipline_reminder: |
+  Only ImagePath/ServiceName patterns that are concretely suspicious are flagged —
+  a temp-path binary, a command/script interpreter or LOLBin as the service host,
+  %COMSPEC%, an encoded/base64 command, or a PSEXESVC-style name (classic PsExec
+  remote-service artifact, also implicating T1569.002). A plain service install with
+  a normal Program-Files-style ImagePath is NOT flagged; "a service was installed" is
+  true of nearly every software installation and would be pure noise on its own.
+  NOTE: `discipline_reminder` is NOT a caveat — it is injected into the explain prompt
+  as analyst context. Caveats in findings come from `does_NOT_prove` only, verbatim.
+confidence_weight: 0.85

@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spectre-forensic"
+version = "0.1.0"
+description = "Deterministic forensic analysis pipeline for AI agents"
+readme = "README.md"
+license = {text = "AGPL-3.0"}
+authors = [{name = "Spectre contributors"}]
+keywords = ["dfir", "digital-forensics", "incident-response", "forensics", "memory-forensics", "mitre-attack", "timeline"]
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "volatility3>=2.7.0",
+    # Load-bearing: recognize.py's libmagic dimension. Without it every
+    # extensionless artifact (a bare SYSTEM hive, a raw disk image) triages
+    # UNRECOGNIZED and the report calls its contents unverified — false, since
+    # the module is installed. Needs libmagic.so present too; the canary
+    # probes for real rather than trusting the import.
+    "python-magic>=0.4.27",
+]
+# Removed in 0.1.0: python-evtx, yara-python. Neither had a single consumer —
+# evtx extraction shells out to the `evtxexport` binary it declares in
+# required_tools, and nothing referenced yara at all. Anyone who was relying
+# on Spectre to pull them in transitively must now declare them directly.
+
+[project.urls]
+Homepage = "https://github.com/jlab1201/Spectre"
+Issues = "https://github.com/jlab1201/Spectre/issues"
+
+[project.optional-dependencies]
+plaso = ["plaso>=20240301"]
+report = ["markdown>=3.4", "weasyprint>=60.0", "beautifulsoup4>=4.12", "python-docx>=1.1"]
+dev = ["pytest>=7.0", "pytest-cov", "ruff>=0.15,<0.16", "pre-commit>=3.0"]
+
+[project.scripts]
+spectre = "spectre.pipeline.runner:main"
+spectre-memory = "spectre.pipeline.spectre_memory:main"
+spectre-canary = "spectre.pipeline.canary:main"
+spectre-scaffold = "spectre.pipeline.rule_scaffold:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/spectre"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: opt-in, network/tool-dependent tests (gated on env flags and tool presence; skipped by default -- see individual test modules for exact opt-in instructions).",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# `l` is a conventional throwaway in test comprehensions; not worth churn.
+"tests/**" = ["E741"]
+# Late imports here follow sys.path/fixture setup and are intentional.
+"tests/test_grounding.py" = ["E402"]
+"tests/test_pcap/test_pcap.py" = ["E402"]
+"tests/test_pipeline/test_report_docx.py" = ["E402"]
+# Import follows module-level constants deliberately (config bootstrap order).
+"src/spectre/pipeline/phase_runner.py" = ["E402"]

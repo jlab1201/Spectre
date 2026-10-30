@@ -1,0 +1,23 @@
+artifact: "Windows Memory — Process Command Lines (cmdline)"
+artifact_id: "Memory-CmdLine"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser:
+  - "volatility3 windows.cmdline.CmdLine"
+  - "MemProcFS pid/<n>/win-cmdline.txt"
+proves:
+  - "The full command line (image path + arguments) a process was launched with"
+  - "The on-disk path the process image was loaded from"
+does_NOT_prove:
+  - "That the arguments were honoured — a command line can be spoofed/hollowed after launch"
+  - "Outcome — the command line shows intent to run, not that it succeeded"
+  - "Who launched it — pair with pslist parentage for context"
+corroborate_with:
+  - "Memory pslist (PID/parent correlation)"
+  - "EVTX 4688 command line / PowerShell ScriptBlock logs"
+  - "Prefetch / Amcache (on-disk execution evidence)"
+discipline_reminder: |
+  Generic red flags: a system-binary name running from a non-System32 path,
+  encoded/obfuscated PowerShell, LOLBin proxy execution (rundll32/regsvr32/mshta),
+  archive utilities staging data, or download cradles. The image path here is the
+  authoritative way to confirm a path-based masquerade that pslist alone cannot show.
+confidence_weight: 1.00

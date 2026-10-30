@@ -1,0 +1,28 @@
+artifact: "Windows Memory — Service Scan (svcscan)"
+artifact_id: "Memory-SvcScan"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser:
+  - "volatility3 windows.svcscan.SvcScan"
+  - "MemProcFS sys/services/by-name/<service>/svcinfo.txt"
+proves:
+  - "A Windows service record existed in the Service Control Manager's in-memory database at capture time"
+  - "Its service name, display name, binary path, state (running/stopped), start type, and owning PID (when the service is running)"
+does_NOT_prove:
+  - "Maliciousness — most services on any host are legitimate; svcscan alone does not establish intent"
+  - "That the binary path on disk still matches what ran — the on-disk file may have changed since the service last started"
+  - "Persistence configuration on disk — svcscan reflects the live SCM database, not the registry ServicesConfig keys (corroborate with registry_run / disk registry hives)"
+  - "Completeness — a service hidden via SCM database manipulation may still evade svcscan; corroborate with the registry Services hive on disk"
+corroborate_with:
+  - "Memory pslist/psscan (owning PID's parent should be services.exe)"
+  - "Memory dlllist / filescan (binary path existence and loaded modules for the service PID)"
+  - "On-disk SYSTEM registry hive CurrentControlSet\\Services (persistence configuration, corroborates or contradicts the live record)"
+discipline_reminder: |
+  Apply service-specific SANS heuristics: a service binary running from a
+  user-writable or non-standard path (Temp, AppData, Users), a service
+  display name mimicking a known-good name with a subtle misspelling, an
+  auto-start service with no legitimate vendor signature context available,
+  or a service's owning PID whose parent is not services.exe. Compare the
+  binary path against the corresponding on-disk registry Services key when
+  available — a mismatch is a tamper indicator. discipline_reminder is
+  analyst context, not a caveat.
+confidence_weight: 1.00

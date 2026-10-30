@@ -1,0 +1,11 @@
+name: lnk
+artifact: lnk
+summary: >-
+  Windows shortcut (.lnk). Stdlib binary parser for the Shell Link format; no
+  external tool, so this module is available on every host.
+tools: []
+tool_optional: false
+optional_tools: []
+python_deps: []
+python_deps_optional: []
+fk_yamls: [lnk]

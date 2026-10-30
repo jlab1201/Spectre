@@ -1,0 +1,15 @@
+case_id: "000-spike"
+expected_findings:
+  - rule: "rundll32-from-temp"
+    source_record: 5093
+    new_process: "rundll32.exe"
+    dll_path: "C:\\Windows\\Temp\\evil.dll"
+    parent: "WINWORD.EXE"
+    expected_status: "INFERRED"
+    expected_confidence: 0.50
+    expected_mitre: "T1218.011"
+expected_finding_count: 1
+must_not_flag_records: [5001, 5002, 5040]
+notes: |
+  Single-source by design so the spike exercises the INFERRED path and the honest
+  0.50 label. Adding a corroborating Prefetch/Amcache source is a Phase-1 exercise.

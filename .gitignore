@@ -1,0 +1,44 @@
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+cache/
+cases/
+.superpowers/
+.spectre/
+*.swp
+*.swo
+.coverage
+htmlcov/
+.pytest_cache/
+.DS_Store
+
+# Generated review artifact (regenerable via scripts/generate_sample_docx.py)
+sample.docx
+.~lock.*#
+
+# graphify pre-update backups of the curated graph (local only)
+graphify-out/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+
+# scaffolder output
+staging/
+
+# Internal / local-only material (not part of the public release)
+docs/remediation/
+docs/superpowers/
+docs/archive/
+docs/ruleset-architecture-proposal.md
+docs/ruleset-community-scalable-plan.md
+CLAUDE.md
+graphify-out/
+.claude/
+.worktrees/

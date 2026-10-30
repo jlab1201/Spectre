@@ -1,0 +1,35 @@
+artifact: "Network Packet Capture"
+artifact_id: "PCAP"
+source: ".pcap / .pcapng file captured via tcpdump, Wireshark, or network tap"
+parser: "Zeek (primary — structured conn/dns/http/dce_rpc/kerberos/dhcp logs); tcpdump/tshark (fallback + verification)"
+proves:
+  - "A network conversation occurred between two endpoints at a specific time"
+  - "The transport protocol (TCP/UDP/ICMP), source/destination IPs, and ports"
+  - "Packet payload contents for unencrypted protocols (HTTP, DNS, SMB, FTP)"
+  - "Traffic volume, inter-packet timing, and beacon intervals"
+  - "DNS queries and their resolved IP addresses"
+  - "HTTP request methods, Host headers, User-Agent strings, and response codes"
+does_NOT_prove:
+  - "Intent — a connection to a known-bad IP could be drive-by, compromise, or misconfiguration"
+  - "What happened on the endpoint — PCAP shows network I/O, not process execution or file writes"
+  - "Encrypted payload contents — TLS 1.2+ traffic is opaque; only SNI and certificate metadata are visible"
+  - "Full conversation if capture is truncated, filtered, or sampled (NetFlow/sFlow is summary, not payload)"
+  - "Attribution — IP addresses can be spoofed, NAT'd, or belong to CDNs/proxies"
+  - "Malice from periodicity alone — a regular beacon interval is a timing property, not evidence of C2; NTP, telemetry, update agents, health checks and keepalives are periodic by design"
+  - "Beacon periodicity across a whole capture — scoring uses one interval distribution per remote IP, so traffic with two distinct phases (a fast burst plus a slow steady phase) is scored as one mixed population and may be missed"
+corroborate_with: ["Firewall Logs", "IDS/IPS Alerts", "NetFlow/sFlow Records", "DNS Server Logs", "Proxy Logs", "Endpoint Process Logs (EVTX 4688 + netscan)"]
+discipline_reminder: |
+  PCAP is time-bounded — it shows what was captured during the collection window, not what happened
+  before or after. Encrypted traffic (TLS 1.2+) cannot be inspected without decryption keys. HTTP on
+  port 443 is a strong evasion indicator (legitimate HTTPS uses TLS, not plaintext HTTP). Beacon
+  detection requires statistical analysis of inter-packet timing — consistent intervals (e.g., 60s ±
+  low variance) strongly suggest C2. DNS-over-HTTPS (DoH) traffic on port 443 cannot be inspected
+  without endpoint logs. Always cross-reference with endpoint artifacts (process execution, network
+  connections) before concluding compromise. A single SYN packet is not a connection — verify
+  completion of the TCP handshake before treating as established communication. Evidence
+  integrity itself must be checked before trusting any of the above: NIC checksum offload means
+  a capture's OUTBOUND packets routinely show invalid checksums (normal — the checksum is
+  computed by hardware after capture), but an INBOUND packet with a bad checksum already crossed
+  the wire, so it means the bytes were altered after capture (pcap-evidence-tampered).
+  NOTE: discipline_reminder is NOT a caveat — it is analyst context for the explain prompt.
+confidence_weight: 1.00

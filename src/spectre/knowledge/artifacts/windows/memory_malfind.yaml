@@ -1,0 +1,28 @@
+artifact: "Windows Memory — Injected Code (malfind)"
+artifact_id: "Memory-Malfind"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser:
+  - "volatility3 windows.malfind.Malfind"
+  - "MemProcFS pid/<n>/memmap/vad.txt (private + committed + executable + not File-backed),
+     with the region's first bytes read from pid/<n>/vmemd/"
+proves:
+  - "A private, committed, executable memory region with no backing file existed in a process"
+  - "The owning process/PID, the region's address, and its protection"
+  - "A byte preview of the region, WHEN the region's contents were readable — the
+     MemProcFS path records this per region (`region_bytes_read`), because a region
+     that was never read cannot testify to what it does or does not contain"
+does_NOT_prove:
+  - "That the code ran — malfind shows resident injected/unpacked bytes, not execution"
+  - "Attribution of who injected it, or the technique used (confirm with VAD/thread analysis)"
+  - "Maliciousness in every case — JIT engines (.NET/Java/browsers) legitimately allocate RWX"
+corroborate_with:
+  - "Memory pslist parentage and ldrmodules (unlinked DLLs)"
+  - "VAD / thread start-address analysis (corroborate the injection)"
+  - "dumpfiles/procdump of the region, then hash + reputation"
+discipline_reminder: |
+  malfind is SANS step 4. An MZ/PE header in the region points to reflective DLL/PE
+  injection (T1055); raw executable bytes without a header suggest shellcode or
+  unpacked malware (T1027.002). Process hollowing shows as a legitimate image whose
+  VAD base disagrees with its PEB base — corroborate before calling it confirmed.
+  Suppress known RWX-using runtimes (CLR, JVM, browser JITs) to cut false positives.
+confidence_weight: 0.80

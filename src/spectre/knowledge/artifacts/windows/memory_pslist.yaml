@@ -1,0 +1,31 @@
+artifact: "Windows Memory — Process List (pslist)"
+artifact_id: "Memory-PSList"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser:
+  - "volatility3 windows.pslist.PsList"
+  - "MemProcFS sys/proc/proc-time.txt (sys/proc/proc.txt fallback)"
+proves:
+  - "A process existed in the kernel process list at the moment of capture"
+  - "Its PID, PPID (parent), image name, and (when present) create/exit time"
+  - "Parent/child relationships and how many copies of an image were running"
+does_NOT_prove:
+  - "Maliciousness — a process being in memory is not itself suspicious"
+  - "Execution order or a timeline — pslist is a single point-in-time snapshot"
+  - "Full image path — pslist carries the image name, not its on-disk path (use cmdline/dlllist)"
+  - "Completeness — pslist walks the linked list; unlinked/hidden processes need psscan to corroborate"
+corroborate_with:
+  - "Memory cmdline (full path + arguments)"
+  - "Memory netscan (owning process of connections)"
+  - "EVTX 4688 / Prefetch / Amcache (on-disk execution evidence)"
+discipline_reminder: |
+  Apply the SANS rogue-process heuristics generically, not via a known-bad list:
+  wrong parent (lsass/services must descend from wininit; svchost from services),
+  more than one instance of a singleton (wininit/services/lsass), a system-binary
+  name running from the wrong path, or a look-alike misspelling (scvhost, svch0st).
+  If volatility3 and MemProcFS disagree on the process set, treat the delta as a
+  hiding indicator — but establish first that it is engine disagreement and not a
+  parsing artifact, and check whether the missing process simply exited (an exit
+  time explains a one-sided absence without any hiding). Spectre does not raise
+  this delta automatically; it is a manual check.
+  discipline_reminder is analyst context, not a caveat.
+confidence_weight: 1.00

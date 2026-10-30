@@ -1,0 +1,19 @@
+artifact: "Windows Security EVTX 4688 (Process Create)"
+artifact_id: "EVTX-Security-4688"
+source: "Security.evtx, Event ID 4688"
+parser: "evtx_dump -> normalize.py"
+proves:
+  - "A process was created on the system at the recorded time"
+  - "The new process image path and (if audited) the full command line"
+  - "The parent process image path"
+does_NOT_prove:
+  - "Process creation (4688) proves the process was launched, not that the DLL is still on disk."
+  - "A single 4688 is one source; corroborate with Prefetch/Amcache/MFT before treating as CONFIRMED."
+corroborate_with: ["Prefetch", "Amcache", "MFT entry", "Registry ShimCache"]
+discipline_reminder: |
+  4688 with full command line requires audit policy + cmdline auditing enabled. A single
+  4688 is one source. rundll32 loading a DLL from a Temp/AppData path with an Office parent
+  is a classic malicious-document chain and is suspicious regardless of disk presence.
+  NOTE: `discipline_reminder` is NOT a caveat — it is injected into the explain prompt as
+  analyst context. Caveats in findings come from `does_NOT_prove` only, verbatim.
+confidence_weight: 1.00

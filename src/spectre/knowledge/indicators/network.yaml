@@ -1,0 +1,292 @@
+paste_share_hosts:
+  description: 'High-signal paste / file-share hosts. Deliberately excludes drive/docs.google
+    and dropbox — far too common in normal browsing.
+
+    '
+  values:
+  - pastebin.com
+  - paste.ee
+  - ghostbin
+  - hastebin
+  - mega.nz
+  - mega.io
+  - mega.co.nz
+  - anonfiles
+  - transfer.sh
+  - wetransfer
+  - gofile.io
+  - 0x0.st
+  - controlc.com
+  - rentry.co
+  - catbox.moe
+  - files.catbox.moe
+suspicious_ports:
+  description: Ports frequently used by Metasploit / Cobalt Strike / reverse shells.
+  values:
+  # 27017 (MongoDB) intentionally NOT here — an exposed database service is
+  # detected by pcap-exposed-service (T1133), not framed as offensive-tooling
+  # C2 (T1571). See exposed_service_ports below.
+  - '4444'
+  - '4445'
+  - '1337'
+  - '31337'
+  - '5555'
+  - '6666'
+  - '12345'
+exposed_service_ports:
+  description: 'Database/cache/search service ports that should never be directly
+    reachable from outside — an inbound connection from a remote host to one of
+    these on the monitored host is an EXPOSED LISTENING SERVICE (T1133), a
+    distinct risk class from suspicious_ports (offensive-tooling C2 ports).
+    Case 003: MongoDB on 27017 with no auth, reachable from the internet.
+
+    '
+  values:
+  - '27017'  # MongoDB
+  - '27018'  # MongoDB shard
+  - '9200'   # Elasticsearch REST API
+  - '9300'   # Elasticsearch transport
+  - '6379'   # Redis
+  - '5432'   # PostgreSQL
+  - '3306'   # MySQL/MariaDB
+  - '5984'   # CouchDB
+  - '11211'  # Memcached
+  - '2379'   # etcd client
+  - '9042'   # Cassandra
+c2_user_agents:
+  description: 'User-Agent strings or substrings that identify known RATs, C2 frameworks,
+    and suspicious HTTP clients. Matched case-insensitively against HTTP User-Agent
+    headers. Sources: malware analysis reports, threat intel.
+
+    '
+  values:
+  - NetSupport Manager
+  - NetSupport Gateway
+  - Cobalt Strike
+  - Metasploit
+  - Mozilla/5.0 zgrab
+  - libredtail-http
+  - xfa1
+  - (KHTML like Gecko)
+  - Hello from Palo Alto Networks
+c2_server_headers:
+  description: 'HTTP Server response headers that identify C2 infrastructure or suspicious
+    services. Matched case-insensitively. Legitimate NetSupport Gateway is rare on
+    internet-facing servers — flag it.
+
+    '
+  values:
+  - NetSupport Gateway
+  - Cobalt Strike
+  - Metasploit
+exploit_paths:
+  description: 'HTTP request paths matching known CVE exploit signatures. Each entry
+    maps a path substring to CVE metadata. The path is matched as a substring of the
+    full request URI (case-insensitive).
+
+    '
+  values:
+  - path: /config/getuser
+    name: Hikvision Camera Config Disclosure (CVE-2017-7921)
+    cve: CVE-2017-7921
+    mitre:
+    - T1595.002
+    - T1190
+    confidence: 0.8
+  - path: eval-stdin.php
+    name: PHPUnit Remote Code Execution (CVE-2017-9841)
+    cve: CVE-2017-9841
+    mitre:
+    - T1595.002
+    - T1190
+    confidence: 0.85
+  - path: /wp-json/wp/v2/users
+    name: WordPress User Enumeration
+    cve: ''
+    mitre:
+    - T1595.002
+    confidence: 0.6
+  - path: /goform/websLogin
+    name: Router/DVR Admin Login Brute Force
+    cve: ''
+    mitre:
+    - T1110.001
+    confidence: 0.55
+  - path: /goform/execute_script
+    name: Router Command Injection
+    cve: ''
+    mitre:
+    - T1595.002
+    - T1190
+    confidence: 0.7
+  - path: /cgi-bin/operator/servetest
+    name: Device Diagnostic Abuse
+    cve: ''
+    mitre:
+    - T1595.002
+    confidence: 0.5
+  - path: /cgi-bin/%%32%65%%32%65
+    name: Path Traversal to Shell (URL-encoded ../../)
+    cve: ''
+    mitre:
+    - T1595.002
+    - T1190
+    confidence: 0.8
+  - path: /twilio.yml
+    name: Twilio API Credential Harvesting
+    cve: ''
+    mitre:
+    - T1552.001
+    confidence: 0.7
+  - path: /stripe_live_key.txt
+    name: Stripe Payment Key Harvesting
+    cve: ''
+    mitre:
+    - T1552.001
+    confidence: 0.7
+  - path: ses_credentials.json
+    name: AWS SES Credential Harvesting
+    cve: ''
+    mitre:
+    - T1552.001
+    confidence: 0.7
+  - path: s3_credentials.json
+    name: AWS S3 Credential Harvesting
+    cve: ''
+    mitre:
+    - T1552.001
+    confidence: 0.7
+  - path: /API/.env
+    name: Laravel/PHP Environment File Exposure
+    cve: ''
+    mitre:
+    - T1552.001
+    confidence: 0.75
+suspicious_tlds:
+  description: 'TLDs with disproportionately high abuse rates in malware/phishing.
+    Presence does NOT confirm maliciousness — it raises the confidence score of other
+    indicators. Excludes .com/.net/.org/.gov/.edu/.mil.
+
+    '
+  values:
+  - moe
+  - xyz
+  - tk
+  - ml
+  - ga
+  - cf
+  - gq
+  - top
+  - icu
+  - cyou
+  - work
+  - click
+  - loan
+  - ooo
+  - pw
+campaign_tags:
+  description: 'Known malware campaign tags found in HTTP query parameters (e.g.,
+    z8=XXXX). Maps tag to malware family name for attribution in findings.
+
+    '
+  mapping:
+    MN12STGOG: XLoader / FormBook
+campaign_param_keys:
+  description: Known C2 campaign parameter key names found in HTTP query strings and
+    response bodies. Each key maps to a campaign tag value.
+  values:
+  - z8
+  - UGZ
+  - 6V
+  - SV
+  - reFq
+  - TW
+  - wxv
+  - mk1
+  - fHR
+  - 7p
+  - ma8kQ
+  - T1-0
+benign_infra_ip_cidrs:
+  description: 'Known-CDN / legitimate-infrastructure IP ranges that should never
+    trigger beacon/C2 alerts, expressed as real CIDR blocks and matched via
+    proper IP-network containment (ipaddress module) — NOT string-prefix
+    matching. A5 Finding 2 / A11 fix: the old benign_infra_ip_prefixes list
+    used bare single/double-octet string prefixes ("13.", "20.", "40.",
+    "52.", "104.") that each blanket-matched an entire /8 (16.7M addresses)
+    under a `str.startswith()` check — only a fraction of which is actually
+    the named provider. beacon() is the only caller (modules/pcap/rules.py
+    _is_legitimate_ip); pcap-c2-protocol''s own T1090.004 (domain fronting)
+    mapping exists precisely because C2 hides behind legitimate cloud/CDN
+    infrastructure, so an over-broad allowlist here silently suppresses the
+    exact threat the rule pack is supposed to catch.
+
+    Generic multi-tenant hyperscale cloud ranges (the old "Microsoft Azure"
+    entries: 13./20./40./52./104.) are DELIBERATELY NOT included here at
+    any CIDR size: any customer, benign or malicious, can be assigned an
+    address inside Azure''s public IP space, so no sub-block of it is
+    "trusted infrastructure" in a way that is safe to blanket-skip for
+    beacon detection. Only allowlist ranges that are the CDN/OS/AV
+    vendor''s OWN static edge infrastructure, not resellable/assignable to
+    arbitrary tenants — and keep them narrow. Refresh from an authoritative
+    published feed (e.g. the provider''s own IP-range JSON) before relying
+    on this list for a high-stakes suppression decision; it is a best-effort
+    starting point, not a live intel feed.
+
+    '
+  values:
+  - cidr: 23.32.0.0/11
+    note: Akamai Technologies edge network (ARIN-registered block)
+  - cidr: 23.192.0.0/11
+    note: Akamai Technologies edge network (ARIN-registered block)
+  - cidr: 150.171.0.0/16
+    note: Microsoft first-party service range
+  - cidr: 142.250.0.0/15
+    note: Google first-party service range
+  - cidr: 172.217.0.0/16
+    note: Google first-party service range
+c2_checkin_hosts:
+  description: 'External IP/geo-lookup services abused by malware to check network
+    connectivity and self-locate before beaconing to the real C2. A Host header
+    match is a moderate-confidence signal, not a confirmed C2.
+
+    '
+  values:
+  - api.ipify.org
+  - ipinfo.io
+  - ifconfig.me
+  - icanhazip.com
+benign_infra_domains:
+  description: 'CRL/OCSP and other certificate-validation infrastructure hosts.
+    Windows/browsers query these automatically for revocation checks — never a
+    C2 indicator even when the query pattern looks suspicious (e.g. random-looking
+    subdomains). dns_anomaly returns None on an equal/suffix match.
+
+    '
+  values:
+  - crl.microsoft.com
+  - ctldl.windowsupdate.com
+  - ocsp.digicert.com
+  - crl3.digicert.com
+  - crl4.digicert.com
+  - ocsp.pki.goog
+  - crls.pki.goog
+  - crl.globalsign.com
+  - ocsp.globalsign.com
+  - crl.usertrust.com
+  - ocsp.usertrust.com
+  - crl.sectigo.com
+  - ocsp.sectigo.com
+  - crl.identrust.com
+  - ocsp.identrust.com
+  - crl.verisign.com
+  - ocsp.comodoca.com
+  - crl.comodoca.com
+  - amazontrust.com
+  - o.lencr.org
+  - r3.o.lencr.org
+  - x1.c.lencr.org
+  - crl.apple.com
+  - ocsp.apple.com
+  - crl.entrust.net
+  - ocsp.entrust.net

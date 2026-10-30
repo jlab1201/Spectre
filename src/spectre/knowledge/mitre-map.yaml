@@ -1,0 +1,342 @@
+# MITRE ATT&CK Technique Map — Detection Rule → Allowed Technique IDs
+# The LLM may ONLY choose from these candidate lists. No free-typing technique IDs.
+# Expanded during Phase 1 KB ingestion (SANS posters + 7 new artifacts).
+
+rules:
+
+  # ── Process Creation (EVTX 4688) ──
+  rundll32-from-temp:
+    allowed: ["T1218.011"]
+    label: "System Binary Proxy Execution: Rundll32"
+  lolbin-from-temp:
+    allowed: ["T1218"]
+    label: "System Binary Proxy Execution: LOLBin from temp path"
+  office-spawns-shell:
+    # A4-05 fix: mshta.exe/bitsadmin.exe are not command/script
+    # interpreters — see modules/evtx/rules.py _SHELL_MITRE_OVERRIDES.
+    allowed: ["T1059", "T1218.005", "T1197"]
+    label: "Command and Scripting Interpreter (genuine shells) / System Binary Proxy Execution: Mshta / BITS Jobs — Office spawns shell/LOLBin"
+  encoded-powershell:
+    allowed: ["T1059.001"]
+    label: "Command and Scripting Interpreter: PowerShell (encoded)"
+  uac-autoelevate-binary:
+    allowed: ["T1548.002"]
+    label: "Abuse Elevation Control Mechanism: Bypass User Account Control"
+  evtx-log-cleared:
+    allowed: ["T1070.001"]
+    label: "Indicator Removal: Clear Windows Event Logs"
+  evtx-suspicious-service-install:
+    # T1569.002 only when the service is PSEXESVC-like — see
+    # modules/evtx/rules.py suspicious_service_install().
+    allowed: ["T1543.003", "T1569.002"]
+    label: "Create or Modify System Process: Windows Service / System Services: Service Execution"
+  evtx-scriptblock-suspicious:
+    # T1027/T1105 only when the specific encoding/download-cradle pattern
+    # actually shows — see modules/evtx/rules.py scriptblock_suspicious().
+    allowed: ["T1059.001", "T1027", "T1105", "T1562.001", "T1003.001"]
+    label: "Command and Scripting Interpreter: PowerShell / Obfuscated Files or Information / Ingress Tool Transfer"
+  evtx-bruteforce-logon:
+    allowed: ["T1110"]
+    label: "Brute Force"
+  evtx-rdp-remote-logon:
+    allowed: ["T1021.001"]
+    label: "Remote Services: Remote Desktop Protocol"
+  pcap-suspicious-port:
+    allowed: ["T1571", "T1071.001"]
+    label: "Non-Standard Port / Application Layer Protocol (outbound)"
+  pcap-exposed-service:
+    allowed: ["T1133"]
+    label: "External Remote Services — exposed database/cache/search service (inbound)"
+  pcap-staging-download:
+    allowed: ["T1105"]
+    label: "Ingress Tool Transfer: Staging Download from File-Sharing Host"
+  pcap-large-transfer:
+    allowed: ["T1041", "T1105"]
+    label: "Exfiltration Over C2 Channel / Ingress Tool Transfer: Volume Outlier"
+  pcap-payload-host:
+    allowed: ["T1105"]
+    label: "Ingress Tool Transfer: malware payload host in injected command"
+  memory-suspicious-process:
+    allowed: ["T1059"]
+    label: "Command and Scripting Interpreter (offensive tool in memory)"
+  memory-archive-staging:
+    allowed: ["T1560"]
+    label: "Archive Collected Data (staging for exfiltration)"
+  memory-secret-env-var:
+    allowed: ["T1552.001"]
+    label: "Unsecured Credentials: Credentials In Files / Environment"
+  memory-sensitive-file:
+    allowed: ["T1560"]
+    label: "Archive Collected Data (archive in user profile)"
+  memory-interesting-url:
+    # Deliberately empty: a paste/file-share URL carved from RAM is a neutral
+    # observation, NOT exfiltration. T1567.002 requires outbound-network
+    # corroboration (a correlation-layer concern), which case 004 lacked —
+    # asserting it here inverted a benign CTF image (gold gap G2). Empty
+    # allowed -> emit falls back to UNMAPPED (out of the attack chain), while
+    # the domain still reaches the IOC export.
+    allowed: []
+    label: "Paste/file-share service referenced in memory (neutral observation)"
+  memory-established-connection:
+    # Deliberately empty: an ESTABLISHED outbound connection recovered from
+    # netscan is a neutral network FACT (case 004 was benign browsing). Any
+    # attack read (C2, exfil) needs corroboration this surfacing rule does not
+    # assert. Empty allowed -> UNMAPPED; the endpoint still reaches the IOC
+    # export so the report layer can judge directionality.
+    allowed: []
+    label: "Established outbound network connection (neutral observation)"
+  memory-acquisition-artifact:
+    # Deliberately empty: a memory-acquisition tool / dump output on disk marks
+    # a forensic/CTF acquisition capture (case 004: DumpIt.exe + VIRUS-PC-*.raw).
+    # A benign-context FACT, not an attack technique.
+    allowed: []
+    label: "Memory-acquisition artifact on disk (neutral observation)"
+  disk-executable-in-temp:
+    allowed: ["T1105"]
+    label: "Ingress Tool Transfer (executable staged in temp)"
+  rundll32-from-appdata:
+    allowed: ["T1218.011"]
+    label: "System Binary Proxy Execution: Rundll32"
+  regsvr32-from-temp:
+    allowed: ["T1218.010"]
+    label: "System Binary Proxy Execution: Regsvr32"
+  mshta-execution:
+    allowed: ["T1218.005"]
+    label: "System Binary Proxy Execution: Mshta"
+  powershell-download-cradle:
+    allowed: ["T1059.001"]
+    label: "Command and Scripting Interpreter: PowerShell"
+  wmic-process-call:
+    allowed: ["T1047"]
+    label: "Windows Management Instrumentation"
+  schtasks-suspicious:
+    allowed: ["T1053.005"]
+    label: "Scheduled Task/Job: Scheduled Task"
+  service-creation:
+    allowed: ["T1543.003"]
+    label: "Create or Modify System Process: Windows Service"
+  encoded-command:
+    allowed: ["T1027", "T1140", "T1059.001"]
+    label: "Obfuscated Files or Information / Command Interpreter"
+
+  # ── Prefetch ──
+  prefetch-anomaly:
+    allowed: ["T1204.002", "T1569.002", "T1105"]
+    label: "User Execution: Malicious File / Service Execution / Ingress Tool Transfer"
+  prefetch-low-run-count:
+    allowed: ["T1204.002"]
+    label: "User Execution: Malicious File — binary executed only once or twice"
+  prefetch-suspicious-execution:
+    # A4-03 fix: the known-offensive-tool branch no longer reuses T1204.002
+    # (User Execution: Malicious File — a masquerade technique) for a tool
+    # running under its own overt name. Each per-tool technique below is
+    # authorized alongside the masquerade branch's T1204.002 — see
+    # modules/prefetch/rules.py _OFFENSIVE_TOOL_MITRE.
+    allowed: ["T1204.002", "T1003.001", "T1555", "T1569.002", "T1087.002", "T1558.003", "T1105"]
+    label: "User Execution: Malicious File (masquerade) / per-tool technique for known offensive-security tools (LSASS dump, credential store, service execution, AD recon, Kerberoasting, ingress tool transfer)"
+
+  # ── Amcache ──
+  amcache-mismatch:
+    allowed: ["T1036", "T1036.005", "T1070.006"]
+    label: "Masquerading / Indicator Removal: Timestomp"
+
+  # ── Registry Persistence ──
+  registry-persistence:
+    allowed: ["T1547.001"]
+    label: "Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder"
+  registry-run-persistence:
+    allowed: ["T1547.001"]
+    label: "Boot or Logon Autostart Execution: Registry Run Keys (user-writable path or LOLBin launcher)"
+  registry-runonce:
+    allowed: ["T1547.001"]
+    label: "Boot or Logon Autostart Execution: Registry Run Keys"
+  registry-winlogon-helper:
+    allowed: ["T1547.004"]
+    label: "Boot or Logon Autostart Execution: Winlogon Helper DLL"
+  registry-appinit-dlls:
+    allowed: ["T1546.010"]
+    label: "Event Triggered Execution: AppInit DLLs"
+  registry-services:
+    # W5-2: T1569.002 added (add-only) for a PSEXESVC-style service, mirroring
+    # evtx-suspicious-service-install.
+    allowed: ["T1543.003", "T1569.002"]
+    label: "Create or Modify System Process: Windows Service (+ Service Execution for PsExec-style services)"
+
+  # ── MFT ──
+  mft-timestomp:
+    allowed: ["T1070.006"]
+    label: "Indicator Removal: Timestomp"
+  mft-hidden-file:
+    allowed: ["T1564.001"]
+    label: "Hide Artifacts: Hidden Files and Directories"
+  mft-ads:
+    allowed: ["T1564.004"]
+    label: "Hide Artifacts: NTFS File Attributes (Alternate Data Streams)"
+
+  # ── LNK ──
+  lnk-suspicious-path:
+    allowed: ["T1204.002", "T1547.009", "T1566.001"]
+    label: "User Execution: Malicious File / Shortcut Modification / Spearphishing Attachment"
+  lnk-persistence-startup:
+    allowed: ["T1547.001"]
+    label: "Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder"
+  lnk-suspicious-target:
+    allowed: ["T1091", "T1021.002", "T1204.002"]
+    label: "Replication Through Removable Media / Remote Services: SMB / User Execution: Malicious File"
+
+  # ── SRUM ──
+  srum-anomalous-process:
+    allowed: ["T1204.002", "T1105", "T1041"]
+    label: "User Execution: Malicious File / Ingress Tool Transfer / Exfiltration Over C2"
+  srum-network-exfil:
+    allowed: ["T1041", "T1048"]
+    label: "Exfiltration Over C2 Channel / Exfiltration Over Alternative Protocol"
+
+  # ── ShimCache ──
+  # amcache-unknown-hash / shimcache-unknown-binary stubs removed: "unknown"
+  # needs a hash-reputation / known-good source Spectre does not have offline
+  # (see modules/registry_hive/rules.py docstring).
+  shimcache-anti-forensics:
+    allowed: ["T1070.004", "T1070.006"]
+    label: "Indicator Removal: File Deletion / Timestomp (ShimCache records a wiper, cleaner or timestomp tool name)"
+  # W5-2: presence-based cache rules. ShimCache/Amcache rows prove a file
+  # existed, not that it ran — T1105 mirrors disk-executable-in-temp
+  # (executable staged on the host), never an execution technique.
+  shimcache-suspicious-path:
+    allowed: ["T1105"]
+    label: "Ingress Tool Transfer (ShimCache records a staged or offensive-tool executable)"
+  shimcache-masquerade:
+    allowed: ["T1036.005"]
+    label: "Masquerading: Match Legitimate Name or Location (ShimCache)"
+  amcache-suspicious-path:
+    allowed: ["T1105"]
+    label: "Ingress Tool Transfer (Amcache records a staged or offensive-tool executable)"
+
+  # ── Hunt-Evil Poster Techniques ──
+  abnormal-parent-child:
+    allowed: ["T1106", "T1059", "T1203"]
+    label: "Native API / Command Interpreter / Exploitation for Client Execution"
+  process-injection:
+    allowed: ["T1055", "T1055.001", "T1055.002", "T1055.012"]
+    label: "Process Injection"
+  dll-side-loading:
+    allowed: ["T1574.002"]
+    label: "Hijack Execution Flow: DLL Side-Loading"
+  dll-search-order:
+    allowed: ["T1574.001"]
+    label: "Hijack Execution Flow: DLL Search Order Hijacking"
+  token-manipulation:
+    allowed: ["T1134.001", "T1134.002"]
+    label: "Access Token Manipulation"
+  kerberoasting:
+    allowed: ["T1558.003"]
+    label: "Steal or Forge Kerberos Tickets: Kerberoasting"
+  pass-the-hash:
+    allowed: ["T1550.002"]
+    label: "Use Alternate Authentication Material: Pass the Hash"
+  lsass-dump:
+    allowed: ["T1003.001"]
+    label: "OS Credential Dumping: LSASS Memory"
+
+  # ── Network Detection (from Network Forensics Poster) ──
+  dns-tunneling:
+    allowed: ["T1048.003", "T1572"]
+    label: "Exfiltration Over Alternative Protocol: DNS / Protocol Tunneling"
+  pcap-beacon:
+    allowed: ["T1071.001"]
+    label: "Application Layer Protocol: Web Protocols — statistical C2 beacon"
+  lateral-movement-smb:
+    allowed: ["T1021.002", "T1570"]
+    label: "Remote Services: SMB/Windows Admin Shares / Lateral Tool Transfer"
+  data-staging:
+    allowed: ["T1074.001"]
+    label: "Data Staged: Local Data Staging"
+  port-scan:
+    allowed: ["T1046", "T1595.001"]
+    label: "Network Service Discovery / Active Scanning: Scanning IP Blocks"
+  pcap-c2-protocol:
+    allowed: ["T1071.001", "T1090.004", "T1573.001", "T1132.001"]
+    label: "Application Layer Protocol: Web Protocols / Proxy: Domain Fronting / Encrypted Channel / Non-Standard Encoding — C2 protocol fingerprint"
+  pcap-dns-anomaly:
+    allowed: ["T1568.002", "T1568", "T1071.004"]
+    label: "Dynamic Resolution: Domain Generation Algorithms / Dynamic Resolution / Application Layer Protocol: DNS — DGA, suspicious TLDs, WPAD abuse"
+
+  # ── SMB / AD Reconnaissance ──
+  smb-ad-recon-pipe:
+    # A5 Finding 3 Claim A: T1021.002 (SMB/Windows Admin Shares, lateral
+    # movement) removed — the rule no longer unconditionally stacks it onto
+    # every named-pipe recon hit (a single RPC bind evidences discovery,
+    # not lateral movement; see modules/pcap/rules.py ad_recon_pipe()).
+    # R1 F4 / W1-B task 3: T1003.006 (DCSync) removed — a bare drsuapi pipe
+    # bind evidences only that the RPC interface was reached, not which
+    # operation was called; asserting DCSync unconditionally over-attributed
+    # the pipe-level entry to the single most severe possible technique.
+    # DCSync is now exclusively asserted by smb-drsuapi-opnum, which reads
+    # the actual opnum (DsGetNCChanges only).
+    allowed: ["T1087.002", "T1069.002", "T1046", "T1135", "T1543.003"]
+    label: "Account/Permission Group Discovery / RPC Service Discovery / Network Share Discovery / Windows Service — AD recon via named pipes"
+  smb-drsuapi-opnum:
+    allowed: ["T1003.006", "T1087.002"]
+    label: "OS Credential Dumping: DCSync / Account Discovery: Domain Account — DRSUAPI opnum granularity (DsGetNCChanges vs DsCrackNames)"
+  pcap-exploit-probe:
+    allowed: ["T1595.002", "T1190", "T1110.001", "T1552.001"]
+    label: "Vulnerability Scanning / Exploit Public-Facing Application / Brute Force / Credentials In Files — known CVE and credential-harvesting exploit paths"
+
+  # ── Memory Forensics ──
+  injected-thread:
+    allowed: ["T1055", "T1055.001", "T1055.002"]
+    label: "Process Injection"
+  hollowed-process:
+    allowed: ["T1055.012"]
+    label: "Process Injection: Process Hollowing"
+  unpacked-memory:
+    allowed: ["T1027", "T1027.002"]
+    label: "Obfuscated Files or Information / Software Packing"
+  memory-anomalous-parent:
+    allowed: ["T1059", "T1106", "T1203"]
+    label: "Command Interpreter / Native API / Exploitation for Client Execution (anomalous parent-child in memory)"
+  memory-masquerade-system-process:
+    allowed: ["T1036.005", "T1036"]
+    label: "Masquerading: Match Legitimate Name or Location (system-process impersonation)"
+  memory-injected-code:
+    allowed: ["T1055.001", "T1055.002", "T1027.002"]
+    label: "Process Injection: DLL/PE Injection / Software Packing (malfind RWX region)"
+  memory-registry-persistence:
+    allowed: ["T1547.001"]
+    label: "Boot or Logon Autostart Execution: Registry Run Keys (recovered from memory hive)"
+  memory-service-persistence:
+    allowed: ["T1543.003"]
+    label: "Create or Modify System Process: Windows Service (auto-start service with an anomalous binary)"
+  memory-winlogon-userinit-hijack:
+    allowed: ["T1547.004"]
+    label: "Boot or Logon Autostart Execution: Winlogon Helper DLL (Userinit chain)"
+  memory-hidden-process:
+    allowed: ["T1564.001", "T1055"]
+    label: "Hide Artifacts: Hidden Process / Process Injection — psscan-only process"
+
+  # ── W5-4: explicit context-only entries (rules whose predicates emit mitre=[]) ──
+  logfile-suspicious-token:
+    # Deliberately empty: a tool/LOLBin NAME appearing in a free-text log record
+    # does not show execution or any specific technique (could be an admin
+    # note or a quoted alert). Predicate emits mitre=[] by design.
+    allowed: []
+    label: "Offensive-tool or LOLBin name referenced in a log record (neutral observation)"
+  memory-browsing-history-domain:
+    # Deliberately empty: a carved browsing-history domain is a neutral FACT
+    # (see memory rules.py browsing_history_domain); user browsing is not an
+    # ATT&CK technique and no interpretation is asserted.
+    allowed: []
+    label: "Browsing-history domain recovered from memory (neutral observation)"
+  pcap-host-identity:
+    # Deliberately empty: host/account identity (DHCP/NBNS/Kerberos names) is
+    # inventory context for the report, not adversary behaviour.
+    allowed: []
+    label: "Host identity context from pcap (inventory, no technique)"
+  pcap-evidence-tampered:
+    # Deliberately empty: invalid inbound checksums are a capture-integrity
+    # caveat about the evidence itself, not a technique observed on the
+    # victim network (and could equally be NIC offload / capture artefacts).
+    allowed: []
+    label: "Possible pcap evidence tampering (integrity caveat, no technique)"
+
+fallback: "UNMAPPED"

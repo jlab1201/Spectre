@@ -1,0 +1,23 @@
+artifact: "Windows Prefetch"
+artifact_id: "Prefetch"
+source: "C:\\Windows\\Prefetch\\*.pf"
+parser: "PECmd (Zimmerman) or prefetch-tool"
+proves:
+  - "An executable was run on the system"
+  - "First run time (creation date of .pf file minus 10 seconds)"
+  - "Last run time (last modified of .pf file minus 10 seconds)"
+  - "Run count (embedded in .pf file, up to last 8 runs)"
+  - "Files and directories accessed during first 10 seconds of execution"
+does_NOT_prove:
+  - "Persistence — Prefetch shows execution, not that the binary still exists or auto-starts"
+  - "Current presence — the .pf file may persist long after the binary is deleted"
+  - "Who ran it — Prefetch contains no user context"
+corroborate_with: ["EVTX 4688", "Amcache", "ShimCache", "MFT", "SRUM"]
+discipline_reminder: |
+  Prefetch is enabled by default on Windows workstations but disabled on servers.
+  The .pf filename is APPNAME-HASH.pf where the hash is derived from the full path.
+  Low run counts (<3) are suspicious for malware. High run counts (>100) are normal
+  for system binaries. Always check if the binary still exists on disk at the path
+  indicated by the hash — if missing, the execution may have been a one-off.
+  NOTE: discipline_reminder is NOT a caveat — it is analyst context for explanation.
+confidence_weight: 1.00

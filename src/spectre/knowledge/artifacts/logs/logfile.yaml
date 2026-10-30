@@ -1,0 +1,22 @@
+artifact: "Generic Log Record (CSV / unix .log)"
+artifact_id: "LogFile-Record"
+source: "Plain-text CSV or line-oriented log evidence (.csv/.tsv/.log)"
+parser: "spectre logfile module — streaming csv.DictReader / line reader"
+proves:
+  - "A line or row with the given fields was present in the supplied log at parse time"
+  - "The literal text content of that record (timestamps, hosts, messages, columns)"
+does_NOT_prove:
+  - "That the logging source was complete or untampered — logs can be rotated, truncated, or forged"
+  - "Attribution or intent — a token match is a lead, not a conclusion"
+  - "That records beyond the configured cap are absent (a capped file leaves a reported remainder un-analyzed)"
+corroborate_with:
+  - "The originating host's authoritative logs (Security.evtx, journald, auth.log source)"
+  - "Independent artifacts (process creation, network capture) for any flagged token"
+  - "Timeline alignment across sources before treating a match as CONFIRMED"
+discipline_reminder: |
+  Generic logs are heterogeneous and easily manipulated. A shared-indicator
+  token match (offensive tool / LOLBin name in a record) is high-signal but
+  low-confidence on its own — always corroborate. When a large file is capped,
+  the un-analyzed remainder is surfaced, not hidden: raise
+  SPECTRE_LOGFILE_MAX_EVENTS or partition the input before concluding "clean".
+confidence_weight: 0.60

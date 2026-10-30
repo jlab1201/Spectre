@@ -1,0 +1,29 @@
+artifact: "Firewall Logs"
+artifact_id: "Firewall"
+source: "Syslog, Windows Event Log (5156/5157), iptables log, pfSense/OPNsense filter log, Cisco ASA/Palo Alto log export"
+parser: "grep, jq (JSON logs), evtx_dump.py (Windows Firewall), custom log parser"
+proves:
+  - "A connection attempt was made (allowed or blocked) at a specific time"
+  - "Source/destination IP, port, and protocol of the connection attempt"
+  - "The firewall action taken: ALLOW, DENY, DROP, REJECT"
+  - "The firewall rule ID or name that triggered the action"
+  - "Traffic direction (inbound/outbound) and interface (eth0, WAN, LAN)"
+does_NOT_prove:
+  - "Application-layer content — firewall logs show L3/L4 metadata, not what was IN the packets"
+  - "Intent — an ALLOW rule matching doesn't mean the traffic is benign; a DENY doesn't mean it was malicious"
+  - "Whether the connection succeeded at the application layer (TCP handshake complete ≠ data delivered)"
+  - "Encrypted payload contents — firewall sees IP/port, not HTTP paths or DNS queries"
+  - "What process initiated the connection — only endpoint logs (EVTX 5156/4688, netscan) show process-to-network mapping"
+corroborate_with: ["PCAP", "IDS/IPS Alerts", "NetFlow/sFlow Records", "Endpoint Process Logs", "Proxy Logs"]
+discipline_reminder: |
+  Firewall logs are L3/L4 metadata — they tell you what was allowed or blocked at the network boundary,
+  not what the traffic contained. A DENY for outbound traffic to a known-bad IP is a strong indicator
+  of attempted C2, but an ALLOW tells you only that the traffic matched a rule — it could still be
+  malicious. Windows Firewall logs (Event ID 5156/5157) include the process path and PID, making
+  them far more valuable than network firewall logs for endpoint attribution. When available, always
+  correlate firewall ALLOW events with PCAP for payload inspection and endpoint logs for process
+  attribution. Firewall policy changes (rule additions, deletions, modifications) during the incident
+  window are themselves suspicious and should be treated as potential anti-forensics or attacker
+  persistence activity.
+  NOTE: discipline_reminder is NOT a caveat — it is analyst context for the explain prompt.
+confidence_weight: 0.80

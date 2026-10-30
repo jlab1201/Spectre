@@ -1,0 +1,19 @@
+{
+  "mitre_techniques": [
+    "T1071.001",
+    "T1105",
+    "T1132.001",
+    "T1568"
+  ],
+  "rule_counts": {
+    "pcap-beacon": 4,
+    "pcap-c2-protocol": 52,
+    "pcap-dns-anomaly": 6,
+    "pcap-large-transfer": 1,
+    "pcap-staging-download": 1
+  },
+  "status_counts": {
+    "INFERRED": 64
+  },
+  "total_findings": 64
+}

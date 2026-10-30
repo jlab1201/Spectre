@@ -1,0 +1,27 @@
+artifact: "Windows Registry Run Keys (Persistence)"
+artifact_id: "Registry-Run"
+source: |
+  NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Run
+  NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\RunOnce
+  SOFTWARE\Microsoft\Windows\CurrentVersion\Run
+  SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce
+parser: "Registry Explorer (Zimmerman) or regripper"
+proves:
+  - "A persistence mechanism was configured to auto-start a binary"
+  - "The full command line used to launch the binary"
+  - "The registry key's last modified timestamp"
+  - "Which hive (user vs. system) the persistence targets"
+does_NOT_prove:
+  - "The binary actually executed at boot — the command may fail silently"
+  - "The binary is still present at the referenced path"
+  - "The persistence is currently active — disabled keys may remain"
+corroborate_with: ["EVTX 4688", "Prefetch", "Amcache", "Scheduled Tasks", "Services"]
+discipline_reminder: |
+  Run keys are the most common persistence mechanism. Look for:
+  - Command lines with obfuscation (cmd /c, powershell -enc, wscript)
+  - Paths in user-writable locations (Temp, AppData, Downloads)
+  - Entries with empty display names or random-character value names
+  - Recently-written keys that don't match the OS install timeline
+  Also check RunOnce (deleted after execution) and RunOnceEx.
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.85

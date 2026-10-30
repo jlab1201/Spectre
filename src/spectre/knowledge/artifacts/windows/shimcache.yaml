@@ -1,0 +1,25 @@
+artifact: "Windows ShimCache (AppCompatCache)"
+artifact_id: "ShimCache"
+source: 'SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache'
+parser: "ShimCacheParser (Zimmerman) or AppCompatCacheParser"
+proves:
+  - "A file at the recorded path was seen by the Application Compatibility subsystem (the file existed on the system)"
+  - "The file's last-modified time as recorded in the cache entry"
+does_NOT_prove:
+  - "That the file was executed — on Windows 8, Windows 10 and Windows 11 an entry is written when a file is shim-evaluated, including by directory browsing, and carries no execution flag; ShimCache presence is not proof of execution"
+  - "Execution on Windows 7/2008 R2 — the InsertFlag is only an indicator and must be corroborated"
+  - "The file still exists on disk"
+  - "Any execution timestamp — the only time captured is the file's last-modified time, and the key LastWrite reflects the last flush at shutdown"
+  - "User context — ShimCache is system-wide"
+  - "Execution count or frequency"
+corroborate_with: ["Prefetch", "Amcache", "EVTX 4688", "MFT", "BAM/DAM"]
+discipline_reminder: |
+  ShimCache (AppCompatCache) is written to the registry on system shutdown
+  and read on boot — entries persist across reboots. On Windows 10 1607+,
+  only the filename (not full path) is stored for 64-bit entries.
+  ShimCache presence is NOT execution; treat an entry as "the file existed"
+  and seek Prefetch/4688/Amcache corroboration before saying it ran. Compare the
+  file's last-modified timestamp from ShimCache with the MFT entry —
+  a mismatch suggests timestomping.
+  NOTE: discipline_reminder is NOT a caveat.
+confidence_weight: 0.70

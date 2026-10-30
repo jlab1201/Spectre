@@ -1,0 +1,21 @@
+artifact: "Windows Memory — Process Environment Variables (envars)"
+artifact_id: "Memory-Envars"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser:
+  - "volatility3 windows.envars.Envars"
+  - "MemProcFS pid/<n>/win-environment.txt"
+proves:
+  - "The environment block a process inherited or set at capture time"
+  - "Variable names and values resident in the process address space"
+does_NOT_prove:
+  - "That a secret-looking value is in active use or still valid"
+  - "Origin — a variable may be inherited from the parent, not set by this process"
+corroborate_with:
+  - "Memory cmdline (how the value is consumed)"
+  - "Memory pslist (which process and parent own the block)"
+discipline_reminder: |
+  Treat variable NAMES implying secrets (password/token/apikey/passphrase) with a
+  non-empty value as credential exposure (T1552). Standard Windows variables
+  (PATH, WINDIR, TEMP, USERNAME) are noise. CTF and intrusion cases frequently
+  stash archive passwords or keys here — recover and decode them.
+confidence_weight: 0.90

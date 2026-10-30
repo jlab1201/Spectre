@@ -1,0 +1,21 @@
+name: registry_hive
+artifact: registry_run
+summary: >-
+  Windows registry hive (SYSTEM/SAM/SOFTWARE/SECURITY/NTUSER.DAT), commonly
+  extensionless — claimed by the regf signature via libmagic, parsed with
+  RegRipper.
+tools: [rip.pl]
+tool_optional: false
+optional_tools: []
+python_deps: []
+python_deps_optional: []
+# W5-2: the rules now emit four artifact types (Run keys, Services, ShimCache,
+# Amcache), each with its own caveats. With more than one fk_yamls entry every
+# rule-emitted artifact type needs an explicit fk_by_artifact route, or
+# tests/test_fk_routing.py fails rather than letting it inherit another's.
+fk_yamls: [registry_run, registry_services, shimcache, amcache]
+fk_by_artifact:
+  registry_run: registry_run
+  registry_service: registry_services
+  shimcache: shimcache
+  amcache: amcache

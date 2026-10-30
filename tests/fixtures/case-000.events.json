@@ -1,0 +1,41 @@
+[
+  {
+    "EventID": 4688, "Channel": "Security", "TimeCreated": "2026-06-20T08:14:02.100Z",
+    "RecordNumber": 5001, "Computer": "WIN10-HR-07",
+    "EventData": {
+      "NewProcessName": "C:\\Windows\\System32\\userinit.exe",
+      "NewProcessId": "0x4a1", "ParentProcessName": "C:\\Windows\\System32\\winlogon.exe",
+      "CommandLine": "userinit.exe", "SubjectUserName": "jsmith"
+    }
+  },
+  {
+    "EventID": 4688, "Channel": "Security", "TimeCreated": "2026-06-20T08:14:05.220Z",
+    "RecordNumber": 5002, "Computer": "WIN10-HR-07",
+    "EventData": {
+      "NewProcessName": "C:\\Windows\\explorer.exe",
+      "NewProcessId": "0x5b2", "ParentProcessName": "C:\\Windows\\System32\\userinit.exe",
+      "CommandLine": "explorer.exe", "SubjectUserName": "jsmith"
+    }
+  },
+  {
+    "EventID": 4688, "Channel": "Security", "TimeCreated": "2026-06-20T09:02:11.500Z",
+    "RecordNumber": 5040, "Computer": "WIN10-HR-07",
+    "EventData": {
+      "NewProcessName": "C:\\Windows\\System32\\rundll32.exe",
+      "NewProcessId": "0x6c3", "ParentProcessName": "C:\\Windows\\explorer.exe",
+      "CommandLine": "rundll32.exe shell32.dll,Control_RunDLL desk.cpl",
+      "SubjectUserName": "jsmith"
+    }
+  },
+  {
+    "EventID": 4688, "Channel": "Security", "TimeCreated": "2026-06-20T11:47:33.880Z",
+    "RecordNumber": 5093, "Computer": "WIN10-HR-07",
+    "EventData": {
+      "NewProcessName": "C:\\Windows\\System32\\rundll32.exe",
+      "NewProcessId": "0x7d4",
+      "ParentProcessName": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "CommandLine": "rundll32.exe C:\\Windows\\Temp\\evil.dll,Start",
+      "SubjectUserName": "jsmith"
+    }
+  }
+]

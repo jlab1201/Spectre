@@ -1,0 +1,18 @@
+# Canary-facing manifest. Readable WITHOUT importing the module, so a broken
+# dependency cannot erase this module from the environment report.
+# `name`, `artifact` and `tools` restate AnalyzerModule fields and are pinned
+# against them by tests/test_module_manifest.py.
+name: pcap
+artifact: pcap_conn
+summary: >-
+  Network capture (.pcap/.pcapng). Zeek-primary extraction to structured logs,
+  with tcpdump/tshark passes as fallback and verification.
+tools: [tcpdump]
+# tcpdump is not truly required — extraction is Zeek-primary. The module ships
+# an availability() hook that decides from config.PCAP_ENGINE; this flag tells
+# the canary not to fail the module on a bare which() miss.
+tool_optional: true
+optional_tools: [zeek, tshark]
+python_deps: []
+python_deps_optional: []
+fk_yamls: [pcap]

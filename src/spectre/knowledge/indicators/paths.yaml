@@ -1,0 +1,19 @@
+# Shared path / file-extension indicator lists used by rule packs.
+# Loaded via knowledge.load_indicator_list("paths", "<key>").
+# Extension lists are used with str.endswith() — callers wrap them in tuple().
+
+archive_extensions:
+  description: Archive file extensions (exfil staging in user profile dirs).
+  values: [.rar, .zip, .7z, .tar, .gz, .cab, .ace, .arj]
+
+executable_extensions:
+  description: Executable/script extensions flagged when found in temp dirs (disk).
+  values: [.exe, .dll, .scr, .ps1, .bat, .vbs, .js]
+
+evtx_temp_markers:
+  description: Windows temp-directory path markers (evtx process image paths).
+  values: ['\temp\', '\appdata\local\temp\', '\windows\temp\']
+
+disk_temp_markers:
+  description: Temp-directory path markers across filesystem layouts (disk file entries).
+  values: ['/temp/', '/tmp/', '/appdata/local/temp/', '\temp\']

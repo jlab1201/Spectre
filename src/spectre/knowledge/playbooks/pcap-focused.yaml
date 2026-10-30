@@ -1,0 +1,509 @@
+# Investigation Playbook — PCAP-Focused Profile
+# =============================================
+# Three-layer design:
+#   LAYER 1: Deterministic extraction (Phase 2 — shell pipelines, zero AI)
+#   LAYER 2: Deterministic detection (Phase 3 — pure math/regex rules)
+#   LAYER 3: AI-guided investigation (Phase 3-4 — LLM reasons across findings)
+#
+# This playbook turns "look for suspicious activity" from a vague directive
+# into a structured investigation with branching paths based on what Phase 2
+# reveals. The LLM never invents findings — it reasons across anchors the
+# deterministic layer already produced.
+
+playbook_id: pcap-focused
+version: "1.0.0"
+description: >
+  Full PCAP triage playbook. Extracts metadata, connections, DNS, HTTP,
+  and per-IP timing. Classifies the case as internet_scanning or
+  internal_intrusion, then guides the AI through the appropriate
+  investigation path.
+
+# ── LAYER 1: Extraction Passes ───────────────────────────────────────
+# PRIMARY ENGINE: Zeek. When Zeek is available (config.PCAP_ENGINE=auto|zeek),
+# a single `zeek -r <pcap>` run produces structured JSON logs (conn/dns/http/
+# dce_rpc/kerberos/dhcp) that the zeek_normalize parsers turn into the same
+# typed events these passes below emit — so every detection rule is unchanged.
+# The tcpdump/tshark passes below are the automatic FALLBACK (Zeek absent) and
+# the on-demand VERIFICATION path (pcap.extract.verify). Two of them — the
+# HTTP ASCII-payload pass and the checksum tamper-check — Zeek does not cover
+# by default and therefore also run alongside Zeek. Output goes to raw_extract/.
+
+extraction_passes:
+
+  - id: capinfos_meta
+    tool: capinfos
+    description: "Capture metadata — packets, duration, data rate, SHA256"
+    command: "capinfos {evidence}"
+    output: raw_extract/capinfos.txt
+    produces:
+      - packet_count
+      - duration_seconds
+      - data_rate_bps
+      - avg_packet_size
+      - first_packet_ts
+      - last_packet_ts
+      - sha256
+
+  - id: brief_connections
+    tool: tcpdump
+    description: "All TCP/UDP connections in brief format"
+    command: "tcpdump -nn -tttt -q -r {evidence}"
+    output: raw_extract/brief.txt
+    produces:
+      artifacts: [conn_events]
+
+  - id: syn_port_scan
+    tool: tcpdump
+    description: "SYN packets per destination port — reveals targeted services"
+    command: >
+      tcpdump -nn -r {evidence}
+      'tcp[tcpflags] & (tcp-syn) != 0 and tcp[tcpflags] & (tcp-ack) == 0' |
+      awk '{print $5}' | sed 's/.*\.//' | sort -n | uniq -c | sort -rn
+    output: raw_extract/syn_per_port.txt
+    produces:
+      metrics: [unique_port_count, unique_scanner_count]
+
+  - id: top_talkers
+    tool: tcpdump
+    description: "Top source/destination IPs by packet count"
+    command: >
+      tcpdump -nn -r {evidence} 'ip' |
+      awk '{print $3}' | sed 's/\.[0-9]*$//' | sort | uniq -c | sort -rn | head -50
+    output: raw_extract/top_sources.txt
+    produces:
+      - top_source_ips
+
+  - id: dns_queries
+    tool: tcpdump
+    description: "All DNS A-record queries with counts"
+    command: >
+      tcpdump -nn -r {evidence} 'port 53' |
+      grep -oP 'A\?\s+\K\S+' | sort | uniq -c | sort -rn
+    output: raw_extract/dns_queries.txt
+    produces:
+      artifacts: [dns_domains]
+      metrics: [dns_query_count]
+
+  - id: dns_resolved_ips
+    tool: tcpdump
+    description: "IPs resolved by DNS responses"
+    command: >
+      tcpdump -nn -r {evidence} 'src port 53' |
+      grep -oP 'A\s+\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | sort | uniq -c | sort -rn
+    output: raw_extract/dns_resolved_ips.txt
+    produces:
+      - resolved_ips
+
+  - id: http_host_headers
+    tool: tcpdump
+    description: "HTTP Host headers from port 80 and 8080"
+    command: >
+      tcpdump -A -r {evidence} 'tcp port 80 or tcp port 8080' |
+      grep -i '^Host:' | sed 's/^.*Host: //' | sed 's/\r$//' | sort | uniq -c | sort -rn | head -50
+    output: raw_extract/http_hosts.txt
+    produces:
+      - host_headers
+
+  - id: http_request_paths
+    tool: tcpdump
+    description: "HTTP request paths — reveals exploit attempts"
+    command: >
+      tcpdump -A -r {evidence} 'tcp port 80 or tcp port 8080' |
+      grep -oP '^(GET|POST|PUT|DELETE|HEAD|OPTIONS) \S+' | sort | uniq -c | sort -rn | head -50
+    output: raw_extract/http_paths.txt
+    produces:
+      - request_paths
+
+  - id: http_user_agents
+    tool: tcpdump
+    description: "HTTP User-Agent strings"
+    command: >
+      tcpdump -A -r {evidence} 'tcp port 80 or tcp port 8080' |
+      grep -i 'User-Agent:' | sed 's/^.*User-Agent: //' | sed 's/\r$//' | sort | uniq -c | sort -rn | head -50
+    output: raw_extract/http_user_agents.txt
+    produces:
+      - user_agents
+
+  - id: http_server_headers
+    tool: tcpdump
+    description: "HTTP Server response headers"
+    command: >
+      tcpdump -A -r {evidence} 'tcp port 80 or tcp port 8080' |
+      grep -i '^Server:' | sed 's/\r$//' | sort | uniq -c | sort -rn | head -20
+    output: raw_extract/http_servers.txt
+    produces:
+      - server_headers
+
+  - id: http_response_codes
+    tool: tcpdump
+    description: "HTTP response code distribution"
+    command: >
+      tcpdump -A -r {evidence} 'tcp port 80 or tcp port 8080' |
+      grep -oP 'HTTP/1\.[01] \d{3}' | sort | uniq -c | sort -rn
+    output: raw_extract/http_codes.txt
+    produces:
+      metrics: [http_200_count, http_404_count, http_400_count]
+
+  - id: port443_plaintext
+    tool: tcpdump
+    description: "Plaintext HTTP on port 443 — C2 evasion indicator"
+    command: >
+      tcpdump -A -r {evidence} 'tcp port 443' |
+      grep -i 'POST\|GET\|HTTP/1\|User-Agent\|Server:\|Host:'
+    output: raw_extract/port443_plaintext.txt
+    produces:
+      - port443_headers
+
+  - id: per_ip_timestamps
+    tool: tcpdump
+    description: "Per-IP PSH packet timestamps for beacon detection"
+    command: >
+      for ip in $(tcpdump -nn -r {evidence} 'tcp' |
+        awk '{print $5}' | sed 's/\.[0-9]*$//' | sort -u | head -100); do
+        tcpdump -nn -tt -r {evidence} "host $ip and tcp[tcpflags] & (tcp-push) != 0" |
+        awk -v ip="$ip" '{print ip, $1}'
+      done
+    output: raw_extract/per_ip_timestamps.csv
+    produces:
+      - beacon_candidates
+
+  - id: checksum_integrity
+    tool: tcpdump
+    description: >
+      Verbose per-packet checksum validation — evidence-integrity check.
+      Inbound bad checksums indicate post-capture tampering; outbound bad
+      checksums are routine NIC TX-checksum-offload noise (excluded).
+    command: "tcpdump -nn -tttt -v tcp -r {evidence}"
+    output: raw_extract/checksum.txt
+    produces:
+      artifacts: [checksum_events]
+
+  - id: daily_breakdown
+    tool: tcpdump
+    description: "Packet count per day — flat vs spiky"
+    command: >
+      tcpdump -nn -tt -r {evidence} 'ip' |
+      awk '{print int($1/86400)}' | sort -n | uniq -c
+    output: raw_extract/daily_counts.txt
+    produces:
+      metrics: [daily_volume_stddev]
+
+
+# ── LAYER 2: Detection Rules ─────────────────────────────────────────
+# Deterministic Python predicates in modules/pcap/rules.py.
+# Listed here so the playbook is self-documenting. The rules themselves
+# live in code (they must be testable).
+
+detection_rules:
+  - rule_id: pcap-suspicious-port
+    description: "Connection to Metasploit/Cobalt Strike reverse-shell ports"
+    implemented: true
+
+  - rule_id: pcap-beacon
+    description: >
+      Statistical beacon detection. For each external IP with >10 PSH packets,
+      calculate inter-packet interval mean and stddev. If stddev < 0.5s AND
+      mean interval is a clean value (30s, 60s, 120s, 300s, 600s) AND more
+      than 20 samples exist: emit anchor with confidence = 0.95 - (0.1 * stddev).
+    mitre: [T1071.001, T1095]
+    implemented: true
+
+  - rule_id: pcap-c2-protocol
+    description: >
+      HTTP header fingerprinting. Match User-Agent, Server, and request
+      patterns against known RAT/C2 signatures:
+      - User-Agent: "NetSupport Manager" → NetSupport RAT
+      - Server: "NetSupport Gateway" → NetSupport C2 server
+      - Plaintext HTTP on port 443 (not TLS) → evasion technique
+      - CMD=POLL / CMD=ENCD pattern → remote access polling protocol
+      Also checks for suspicious Host headers (external services used as
+      proxy checks: api.ipify.org, baidu.com on non-browser ports).
+    mitre: [T1071.001, T1090.001, T1090.004]
+    implemented: true
+
+  - rule_id: pcap-exploit-probe
+    description: >
+      Match HTTP request paths against known CVE exploit signatures:
+      - /config/getuser?index=0 → CVE-2017-7921 (Hikvision)
+      - /vendor/phpunit/.../eval-stdin.php → CVE-2017-9841 (PHPUnit RCE)
+      - /wp-json/wp/v2/users → WordPress user enumeration
+      - /goform/websLogin → router admin brute force
+      - /goform/execute_script → router command injection
+      - /cgi-bin/operator/servetest → device diagnostic abuse
+      - /.env, /twilio.yml, /stripe_live_key.txt → credential harvesting
+      - /cgi-bin/%%32%65%%32%65 → path traversal
+    mitre: [T1595.002, T1190]
+    implemented: true
+
+  - rule_id: pcap-dns-anomaly
+    description: >
+      DNS anomaly detection:
+      - Domains with .xyz, .tk, .ml, .cf, .ga, .gq TLDs (high abuse)
+      - Domains with randomized/alphanumeric subdomains (DGA pattern)
+      - Short TTLs (< 60s) indicating fast-flux
+      - WPAD queries to non-corporate domains
+      - DNS resolution to IP that is also a C2 candidate from beacon detection
+    mitre: [T1572, T1071.004]
+    implemented: true
+
+  - rule_id: pcap-exposed-service
+    description: >
+      Monitored host answering INBOUND on a sensitive database/cache/search
+      port (MongoDB 27017, Redis 6379, Elasticsearch 9200, etc.) — an
+      exposed listening service, distinct from outbound C2 on the same
+      port list.
+    mitre: [T1133]
+    implemented: true
+
+  - rule_id: pcap-staging-download
+    description: >
+      Large (>1MB), download-dominant (>5:1 ratio) flow from a DNS-resolved
+      file-sharing/paste host or suspicious TLD — malware staging.
+    mitre: [T1105]
+    implemented: true
+
+  - rule_id: pcap-large-transfer
+    description: >
+      Flow-volume outlier (>5MB total). Outbound-dominant reads as possible
+      exfiltration; inbound-dominant as a large ingress transfer.
+    mitre: [T1041, T1105]
+    implemented: true
+
+  - rule_id: smb-ad-recon-pipe
+    description: >
+      AD reconnaissance via SMB2 IPC$ named pipe opens (SAMR, LSARPC,
+      DRSUAPI, EPM, netlogon, spoolss).
+    mitre: [T1087.002, T1069.002, T1003.006, T1046, T1135, T1543.003, T1021.002]
+    implemented: true
+
+  - rule_id: smb-drsuapi-opnum
+    description: >
+      DRSUAPI opnum-level detection — distinguishes DCSync (DsGetNCChanges,
+      opnum 3) from name-resolution recon volume (DsCrackNames, opnum 12),
+      independent of transport (does not require a named-pipe OPEN frame).
+    mitre: [T1003.006, T1087.002]
+    implemented: true
+
+  - rule_id: pcap-host-identity
+    description: >
+      Host/account identity resolved from Kerberos principal + client IP,
+      and DHCP hostname + assigned IP. Investigative context, not an
+      attack technique (mitre: []).
+    mitre: []
+    implemented: true
+
+  - rule_id: pcap-payload-host
+    description: >
+      Malware payload-host IP embedded in an injected command's wget/curl
+      URL (e.g. command-injection delivering a Mozi-style payload).
+    mitre: [T1105]
+    implemented: true
+
+  - rule_id: pcap-evidence-tampered
+    description: >
+      Evidence-integrity check, not an attack technique (mitre: []).
+      tcpdump -v validates IP/TCP checksums itself. NIC TX-checksum-offload
+      means OUTBOUND (locally-generated) packets routinely show bad
+      checksums in a genuine capture — expected, not counted. INBOUND
+      packets already crossed the wire with a checksum some other stack
+      computed; a bad one there means the bytes were altered after capture.
+    mitre: []
+    implemented: true
+
+
+# ── LAYER 2.5: Evidence Integrity Gate ──────────────────────────────
+# Runs before classification, regardless of profile — a capture with
+# signs of post-capture tampering makes every downstream finding in the
+# case suspect, so this check is unconditional and not skipped by any
+# profile's `skip:` list.
+
+evidence_integrity_gate:
+  - id: evidence_integrity
+    priority: 0
+    description: >
+      Check pcap-evidence-tampered anchors. Any hit means at least one
+      inbound packet has an invalid IP/TCP checksum — since normal NIC
+      checksum offload only produces bad checksums on OUTBOUND
+      (locally-generated) packets, an inbound bad checksum means the
+      packet bytes were altered after capture. This does not itself
+      prove malicious intent (corrupted files and buggy middleboxes are
+      rare alternate explanations — see the rule's false_positives) but
+      it means every other finding in this case should be surfaced with
+      a chain-of-custody caveat until verified.
+    rules_to_run: [pcap-evidence-tampered]
+
+
+# ── LAYER 3: Classification & Investigation Paths ────────────────────
+# After Phase 2 extraction + Phase 3 detection, the case is classified
+# into one of these profiles. Each profile defines what to investigate,
+# in what priority order, and what to skip.
+
+classification:
+  # Thresholds are tuned from real PCAP analysis:
+  #   PCAP 1 (server scan): 12,330 scanners, 31,773 ports, 151 byte avg pkt
+  #   PCAP 2 (intrusion):    92 scanners, 8 ports, 408 byte avg pkt
+
+  - profile: internet_scanning
+    conditions:
+      unique_scanner_count: {gt: 5000}
+      unique_port_count: {gt: 100}
+      avg_packet_size: {lt: 250}
+      daily_volume_stddev: {lt: 0.3}  # flat daily volume = background radiation
+    focus_areas:
+      - id: exposed_services
+        priority: 1
+        description: >
+          Identify which ports return SYN-ACK (services that are actually
+          open). Cross-reference with FK YAML for each service type.
+          Flag non-standard service-on-port combinations (e.g., HTTP on 27017).
+        rules_to_run: [pcap-exploit-probe, pcap-suspicious-port]
+
+      - id: exploit_attempts
+        priority: 2
+        description: >
+          Review HTTP request paths for known CVE signatures. Check response
+          codes — 200 OK on an exploit path is critical; 404 is noise.
+          Look for credential harvesting patterns (.env, _credentials, .yml).
+        rules_to_run: [pcap-exploit-probe]
+
+      - id: proxy_abuse
+        priority: 3
+        description: >
+          Check HTTP Host headers for external service names (api.ipify.org,
+          baidu.com, google.com). These indicate attackers testing if the
+          server can proxy requests to external hosts (SSRF/open proxy check).
+        rules_to_run: [pcap-c2-protocol]
+
+      - id: service_misconfiguration
+        priority: 4
+        description: >
+          Identify services running on non-standard ports. Cross-reference
+          Server headers with port numbers. Flag services that shouldn't be
+          internet-facing (MongoDB, Redis, Docker, MySQL, RDP).
+    skip:
+      - beacon_detection  # too much noise in scanning traffic
+      - dns_correlation    # server-side captures rarely have client DNS
+      - lateral_movement   # only relevant for internal captures
+
+  - profile: internal_intrusion
+    conditions:
+      internal_ips_present: true
+      unique_scanner_count: {lt: 200}
+      port_443_ratio: {gt: 0.3}  # >30% of traffic is HTTPS
+      avg_packet_size: {gt: 300}
+    focus_areas:
+      - id: beacon_detection
+        priority: 1
+        description: >
+          For every external IP with >50 packets, run statistical beacon
+          analysis. Calculate inter-packet timing intervals. Any IP with
+          stddev < 0.5s and clean interval (30s, 60s, 120s) is a C2 candidate.
+          Extract payloads from beacon candidates for protocol fingerprinting.
+        rules_to_run: [pcap-beacon]
+
+      - id: c2_fingerprinting
+        priority: 2
+        description: >
+          For each beacon candidate, inspect HTTP headers. Match against
+          known RAT signatures (NetSupport, Cobalt Strike, Metasploit).
+          Check for plaintext HTTP on port 443 (evasion). Check for
+          non-standard User-Agent strings. Check for CMD=POLL/ENCD patterns.
+          Inspect port 443 ASCII payload for any non-TLS plaintext.
+        rules_to_run: [pcap-c2-protocol]
+
+      - id: dns_correlation
+        priority: 3
+        description: >
+          For every suspicious external IP, find the DNS query that resolved
+          it. Check the domain TLD, registration freshness, and naming pattern.
+          Flag DGA-like domains (random alphanumeric). Cross-reference times:
+          DNS resolution timestamp should closely precede first connection.
+        rules_to_run: [pcap-dns-anomaly]
+
+      - id: lateral_movement
+        priority: 4
+        description: >
+          Look for SMB (445), RDP (3389), WinRM (5985/5986), PSRemoting
+          connections to other internal hosts. Check for unusual SMB share
+          access patterns. Check Kerberos (88) for service ticket anomalies.
+          Check LDAP (389) for reconnaissance queries (e.g., (objectClass=*)).
+      - id: data_exfiltration
+        priority: 5
+        description: >
+          Look for large outbound flows to external IPs (especially non-443
+          ports). Check for archive file signatures in payloads (PK zip header,
+          RAR header). Check DNS query lengths — long DNS queries may indicate
+          DNS tunneling (queries > 100 bytes to non-Microsoft domains).
+    skip:
+      - bulk_scanning_analysis  # not relevant for internal captures
+      - iot_exploit_spray       # Hikvision, router exploits — external-facing only
+
+  # Fallback when no profile matches strongly
+  - profile: unknown
+    conditions: {}  # always matches if nothing else does
+    focus_areas:
+      - id: full_triage
+        priority: 1
+        description: "Run all focus areas. Let the AI decide priority based on findings."
+
+
+# ── AI Agent Brief Template ──────────────────────────────────────────
+# After extraction + detection + classification, the pipeline hands the
+# AI agent this structured brief. The AI reasons across anchors but never
+# invents findings — every claim must cite an anchor or extraction artifact.
+
+agent_brief_template: |
+  Spectre PCAP Investigation Brief
+  ================================
+  Case: {case_id}
+  Profile: {classification_profile}
+  Evidence: {evidence_path}
+
+  ## Classification Decision
+  {classification_rationale}
+
+  ## Key Metrics
+  - Packets: {packet_count} over {duration}
+  - Unique external IPs: {unique_scanner_count}
+  - Unique ports probed: {unique_port_count}
+  - Avg packet size: {avg_packet_size} bytes
+  - Port 443 traffic: {port_443_pct}% of total
+
+  ## Deterministic Anchors Produced
+  {anchors_summary}
+
+  ## Focus Areas (in priority order)
+  {focus_areas}
+
+  ## Investigation Instructions
+  You are analyzing a {classification_profile} scenario.
+  {profile_specific_instructions}
+
+  CRITICAL RULES:
+  1. Every finding MUST cite an anchor or extraction artifact path.
+  2. Never claim compromise without beacon + protocol + DNS correlation.
+  3. Distinguish "absence of evidence" from "evidence of absence."
+  4. Flag false positives explicitly (e.g., Akamai CDN IPs serving Microsoft content).
+  5. The FK YAML caveats in pcap.yaml are binding — cite them in your report.
+
+profile_instructions:
+  internet_scanning: >
+    This is an internet-facing server under mass scanning. Focus on:
+    1. Which services are ACTUALLY exposed (SYN-ACK responses)?
+    2. Are any exploit attempts succeeding (200 OK on exploit paths)?
+    3. Are there misconfigurations attracting the wrong probes?
+    4. Is there any evidence of ACTUAL intrusion, or is this all noise?
+    Do NOT report every exploit attempt — summarize by CVE and volume.
+    The FK YAML caveat "IP addresses can be spoofed, NAT'd, or belong to
+    CDNs/proxies" is especially relevant here.
+
+  internal_intrusion: >
+    This is an internal network capture — likely an intrusion investigation.
+    Focus on finding the C2 channel. Every external IP with sustained
+    connections is a candidate. Prioritize:
+    1. Beacon detection (60s intervals are textbook C2)
+    2. Protocol fingerprinting (plaintext on 443, known RAT signatures)
+    3. DNS correlation (domain → IP → timing)
+    4. Lateral movement indicators
+    The discipline_reminder from pcap.yaml applies: "HTTP on port 443 is a
+    strong evasion indicator."

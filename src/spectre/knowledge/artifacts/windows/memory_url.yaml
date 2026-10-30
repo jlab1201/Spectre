@@ -1,0 +1,19 @@
+artifact: "Windows Memory — Carved URLs"
+artifact_id: "Memory-URL"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser: "strings-style sweep (carve_urls.py)"
+proves:
+  - "A URL string was present in the raw bytes of the memory image"
+does_NOT_prove:
+  - "That the URL was visited, or by which process/user — carving has no context"
+  - "Integrity — carved strings pick up trailing/adjacent bytes; canonicalize before use"
+  - "Maliciousness — most carved URLs are benign browsing/telemetry"
+corroborate_with:
+  - "Browser history / netscan (tie the URL to a process or connection)"
+  - "PCAP (confirm the request on the wire)"
+  - "Threat-intel reputation"
+discipline_reminder: |
+  High-signal hosts are paste/file-share/cloud endpoints (pastebin, mega, anonfiles,
+  transfer.sh) that suggest exfiltration or payload delivery — but a URL in RAM is a
+  lead, not proof. De-duplicate aggressively; the same link is carved many ways.
+confidence_weight: 0.70

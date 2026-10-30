@@ -1,0 +1,24 @@
+artifact: "Windows Memory — Registry Hive List (hivelist)"
+artifact_id: "Memory-HiveList"
+source: "RAM image (.raw/.mem/.vmem/.lime/.dmp)"
+parser: "volatility3 windows.registry.hivelist.HiveList"
+proves:
+  - "A registry hive was mapped into memory at capture time"
+  - "The hive's backing file path (SOFTWARE, SYSTEM, SAM, per-user NTUSER.DAT, etc.), enabling targeted printkey lookups against it"
+does_NOT_prove:
+  - "Maliciousness — hivelist is purely an inventory of loaded hives, never itself an indicator"
+  - "The current on-disk contents of the hive — the in-memory hive can be ahead of (dirty pages not yet flushed) or behind the on-disk .DAT/.LOG files"
+  - "That every hive on the system is present — hives for unmounted user profiles or unloaded services will not appear"
+  - "Timeline information — hivelist is a point-in-time inventory, not a record of when a hive was loaded"
+corroborate_with:
+  - "Memory regkey (printkey) enumeration, which requires a hive to be listed here first"
+  - "On-disk registry hives (mounted disk image), to detect in-memory vs. on-disk drift (dirty/unflushed changes, tamper indicators)"
+discipline_reminder: |
+  hivelist itself rarely fires a rule — its role is enabling accurate
+  targeted printkey/regkey enumeration (autostart keys, service config)
+  by confirming which hives are actually mapped. Note which user hives
+  (NTUSER.DAT) are present to scope per-user persistence checks, and flag
+  as noteworthy (not malicious) any expected system hive that is absent
+  (may indicate incomplete capture or an unusual boot state).
+  discipline_reminder is analyst context, not a caveat.
+confidence_weight: 1.00

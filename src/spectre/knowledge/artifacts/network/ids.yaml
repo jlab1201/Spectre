@@ -1,0 +1,28 @@
+artifact: "IDS/IPS Alerts"
+artifact_id: "IDS"
+source: "Snort/Suricata alerts (fast.log, eve.json), Zeek/Bro notices, Security Onion alerts, commercial NIDS/NIPS (Palo Alto Threat, Cisco Firepower)"
+parser: "jq (JSON), grep (fast.log), zeek-cut, custom alert parser"
+proves:
+  - "A signature-based or anomaly-based detection fired at a specific time"
+  - "The alert signature ID (SID), classification, priority/severity, and rule message"
+  - "Source/destination IP, port, and protocol of the triggering traffic"
+  - "The specific detection rule that matched (e.g., ET TROJAN, GPL EXPLOIT, CUSTOM policy)"
+does_NOT_prove:
+  - "Compromise — an alert is a detection signal, not confirmed exploitation; false positives are common"
+  - "Exploit success — the IDS saw an exploit attempt; it cannot confirm whether the target was vulnerable"
+  - "Data exfiltration volume — IDS may flag an exfil pattern but cannot measure total bytes transferred"
+  - "Full conversation context — alerts are point-in-time; the traffic before and after may provide exculpatory evidence"
+  - "Attribution — signatures match patterns, not threat actors; commodity malware reuses known techniques"
+corroborate_with: ["PCAP", "Firewall Logs", "Endpoint Process Logs", "Antivirus/EDR Alerts", "Proxy Logs"]
+discipline_reminder: |
+  IDS alerts are detection signals, not findings. Every alert must be triaged: verify the triggering
+  packet(s) in PCAP, cross-reference with firewall logs for ALLOW/DENY disposition, and check
+  endpoint logs for corresponding process execution or file writes. High-severity alerts (priority 1-2
+  in Snort/Suricata) demand immediate investigation; low-severity alerts (priority 3-4) may be
+  informational or policy violations. Alert fatigue is real — if a single IP triggers hundreds of
+  alerts in minutes, batch them by signature ID and investigate the highest-severity unique events
+  first. Emerging Threats (ET) and Proofpoint rules have different false-positive profiles; ET OPEN
+  rules tend to be noisier than ET PRO. Suricata eve.json provides structured metadata (HTTP hostname,
+  TLS SNI, DNS query) — use this for enrichment before reaching for raw PCAP.
+  NOTE: discipline_reminder is NOT a caveat — it is analyst context for the explain prompt.
+confidence_weight: 0.70
